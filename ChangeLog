@@ -1,3 +1,8 @@
+v 0.4 - Xenomai
+------
+-- Makefile ready for xenomai autoconfig
+-- Total rewrite for Xenomai integration
+
 v 0.34
 ------
 -- hwservo.c/.h: Servo core functionality to move in a bigger range from the standard (1-2ms). 

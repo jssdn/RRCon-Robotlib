@@ -2,6 +2,6 @@
 #define __ROBOTDEVICES_H__
 
 // legacy
-#include "adcdevices.h"
+// #include "adcdevices.h"
 
 #endif

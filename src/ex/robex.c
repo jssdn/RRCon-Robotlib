@@ -22,20 +22,20 @@
 
 //#include "busio.h"	     // TODO: Shouldn't go here!!
 // Lib includes 
-#include "xspidev.h"         // SPI COMMANDS
-#include "max1231adc.h"      // ADC
-#include "adcdevices.h"      // ADC DEVICES DEFINES
-#include "i2cdevices.h"      // I2C DEVICES DEFINES
-#include "i2ctools.h"        // I2C COMMANDS
-#include "version.h"         // LIB VERSION
-#include "srf08.h"           // SONAR
-#include "lis3lv02dl.h"      // ACCELEROMETER
-#include "tcn75.h"           // TEMP SENSOR
-#include "hmc6352.h"         // COMPASS
+// #include "xspidev.h"         // SPI COMMANDS
+// #include "max1231adc.h"      // ADC
+// #include "adcdevices.h"      // ADC DEVICES DEFINES
+// #include "i2cdevices.h"      // I2C DEVICES DEFINES
+// #include "i2ctools.h"        // I2C COMMANDS
+ #include "version.h"         // LIB VERSION
+// #include "srf08.h"           // SONAR
+// #include "lis3lv02dl.h"      // ACCELEROMETER
+// #include "tcn75.h"           // TEMP SENSOR
+// #include "hmc6352.h"         // COMPASS
 #include "gpio.h"            // GPIO ( LEDS AND BUTTONS) 
-#include "lcd_proc.h"        // 16x2 LCD 
+// #include "lcd_proc.h"        // 16x2 LCD 
 #include "openloop_motors.h" // MOTORS
-#include "hwservos.h"	     // SERVOS
+// #include "hwservos.h"	     // SERVOS
 
 #define DEVSPI "/dev/spi0"
 
@@ -46,211 +46,6 @@ void timestamp()
      printf("%s",asctime( localtime(&ltime) ) );  
 }  
 
-void test_compass()
-{
-    int i,res; 
-    uint16_t deg;
-
-    /* Testing I2C COMPASS */
-    printf("Testing compass....\n"); 
-    if(hmc6532_idcheck(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS) < 0 )
-        printf("error!\n");
-    else
-        printf("ID successful\n");
-
-    printf("Initializing in query mode\n") ; 
-
-     if(( res =  hmc6532_init_query(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS)) < 0 ){
-         printf(" ERROR when initializing compass: %d \n" , res ) ; 
-         exit(1);
-     }
-
-    printf("Performing 5 measures\n") ; 
-    //TODO: fix - first measure is rubbish (actually correspond with last read -> eeprom address register )
-    hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg ); 
-
-    for( i = 0 ; i < 5 ; i++ )
-    {
-        sleep(1); // wait for the first measures
-        if(( res = hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg )) < 0 ){
-            printf(" ERROR when reading compass: %d \n" , res ); 
-            exit(1);
-        }
-
-        printf("0x%x\t Degrees: %f\n", deg, ((float)deg)/10); 
-    }
-
-    printf("Initializing in standby mode\n") ; 
-    
-     if(( res =  hmc6532_init_standby(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS)) < 0 ){
-         printf(" ERROR when initializing compass: %d \n" , res ) ; 
-         exit(1);
-     }
-
-    printf("Performing 5 measures\n") ; 
-    //TODO: fix - first measure is rubbish (actually correspond with last read -> eeprom address register )
-    hmc6532_read_wait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg ); 
-
-    for( i = 0 ; i < 5 ; i++ )
-    {
-        sleep(1); // wait for the first measures
-        if(( res = hmc6532_read_wait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg )) < 0 ){
-            printf(" ERROR when reading compass: %d \n" , res ); 
-            exit(1);
-        }
-
-        printf("0x%x\t Degrees: %f\n", deg, ((float)deg)/10); 
-    }
-
-    //----------- Continous -----------------------------------
-    printf("Initializing in continous mode 10Hz\n") ; 
-
-     if(( res =  hmc6532_init_continous(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS ,10)) < 0 ){
-         printf(" ERROR when initializing compass: %d \n" , res ) ; 
-         exit(1);
-     }
-    //TODO: fix - first measure is rubbish (actually correspond with last read -> eeprom address register )
-    hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg ); 
-
-    printf("Performing 5 measures\n") ; 
-    for( i = 0 ; i < 5 ; i++ )
-    {
-        sleep(1); // wait for the first measures
-        if(( res = hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg )) < 0 ){
-            printf(" ERROR when reading compass: %d \n" , res ); 
-            exit(1);
-        }
-
-        printf("0x%x\t Degrees: %f\n", deg, ((float)deg)/10); 
-    }
-
-}
-
-void test_accelerometer()
-{
-    lis3s lis3data;
-    double x,y,z;
-    /* Testing I2C/ACCELEROMETER */
-
-    lis3lv02dl_init_3axis(I2C_ACCELEROMETER_ADDRESS, I2C_ACCELEROMETER_BUS);
-    printf("Move the thing!\n");
-
-    if( lis3lv02dl_calib(I2C_ACCELEROMETER_ADDRESS, I2C_ACCELEROMETER_BUS, &lis3data) < 0 ){
-        printf("Cannot read!");
-        exit(1);
-    }else{
-        printf("Calibration X = %d\tY = %d\tZ = %d\n", lis3data.xcal,lis3data.ycal,lis3data.zcal); 
-    }
-
-    while(1)
-    {
-        sleep(1);
-        if( lis3lv02dl_read(I2C_ACCELEROMETER_ADDRESS, I2C_ACCELEROMETER_BUS, &lis3data) < 0 ){
-            printf("Cannot read!");
-        }
-
-        x = (double)(lis3data.xacc - lis3data.xcal)/(SCALE_FACTOR_6G_16bit); 
-        y = (double)(lis3data.yacc - lis3data.ycal)/(SCALE_FACTOR_6G_16bit); 
-        z = (double)(lis3data.zacc - lis3data.zcal)/(SCALE_FACTOR_6G_16bit); 
-
-        printf("X = %f\tY = %f\tZ = %f\n", x,y,z);
-
-    }
-
-}
-void test_temperature()
-{
-    int16_t temp;
-
-    /* Testing I2C/TEMP SENSOR */
-
-    printf("Testing temp sensor\n");
-    tcn75_init(I2C_TEMPSENSOR_ADDRESS, I2C_TEMPSENSOR_BUS );
-
-    while(1)
-    {
-        tcn75_read(I2C_TEMPSENSOR_ADDRESS, I2C_TEMPSENSOR_BUS, &temp);
-        printf(" Temp read: %.1f ºC\n", (double)temp/2 ); 
-        sleep(1);
-    }
-}
-
-void test_sonar()
-{
-     int i;
-    /* Testing I2C/SONAR */
-    printf("Firing SONAR 0\n");
-
-//     i2cset(I2C_SONAR0_ADDRESS,0x00, 0x51,I2C_SONAR0_BUS, 'b' );
-//     usleep(60000);
-// 
-//     for( i = 0 ; i < 6 ; i++){
-//         res = i2cget(I2C_SONAR0_ADDRESS,i,I2C_SONAR0_BUS, 'b');
-//         printf("Reg[0x%x]=%d\n",i,res);
-//     }
-
-    srf08_fire_cm(I2C_SONAR0_ADDRESS, I2C_SONAR0_BUS ); 
-    srf08_sleep_max();
-    printf("Light: 0x%x\n", srf08_get_light( I2C_SONAR0_ADDRESS, I2C_SONAR0_BUS ));
-
-    for ( i = 0 ; i < 17 ; i++ ) 
-        printf( "Echo[%d]: %d (cm)\n", i , srf08_get_echo(I2C_SONAR0_ADDRESS, I2C_SONAR0_BUS, i ));
-
-}
-
-void test_adc()
-{
-    xspidev xspi; 
-    int i; 
-    uint8_t* dest; 
-    max1231_config adcconf; 
-    /* Testing SPI / ADC */    
-    spi_configure(&xspi, DEVSPI, 0, 0 , 0 , 0 , 0 , 0 , 0 , 0, 0); // TODO: Explain here
-    spi_set_config(&xspi);
-
-    // Configuration with Gyros in differential mode
-    /*
-    adcconf.pairs[4] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
-    adcconf.pairs[5] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
-    adcconf.pairs[6] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
-    adcconf.clock = 0x64 ; 
-    adc_config(&xspi, &adcconf );
-    */
-  
-    // Configuration with Gyros in unipolar mode
-    adc_reset(&xspi); 
-    usleep(10000); // needed? 
-    adc_config_all_uni_single(&xspi);
-    usleep(10000); // needed?
-
-    printf("Reading inputs in no-scan mode\n");
-    printf("Temperature %f ºC \n",  adc_get_temperature(&xspi));
-    adc_reset_fifo(&xspi);
-
-    for( i = 0 ; i < 16 ; i++ )
-    {
-        printf("ADC_CHANNEL %d:\n", i);
-        printf("%d\n",adc_read_one_once(&xspi,i));// scan 1 channel
-    }
-
-
-    dest = (uint8_t*) malloc(32) ; // 2*sizeof(uint8_t)
-
-    printf("Reading inputs in scan mode\n");
-
-    if( adc_read_scan_0_N(&xspi,dest, 15) < 0 )
-        printf("Problems reading in Scan Mode 0 to N\n");
-    else{
-            for( i = 0 ; i < 16 ; i++ )
-            {
-                printf("ADC CHANNEL %d:", i);
-                printf("%d\n",(int)( (int)dest[i*2+1] | ((int)dest[i*2]<<8)) );// scan 1 channel
-            }
-    }
-
-    free(dest); 
-
-}
 
 void test_gpio()
 {
@@ -293,127 +88,6 @@ void test_gpio()
     unmap_gpio();
 }
 
-void test_motors()
-{
-    int i,j; 
-    volatile int* p; 
-    int k, l; 
-    l = 0; 
-    
-    printf("Mapping Motor and Quadrature encoders\n");
-    map_motors();
-    map_qenc();    
-    map_servos();
-    
-    for(i = 0 ; i < 4 ; i++)     
-      oloopm_set_freq_div(i,3);
-    
-    for(i = 0 ; i < 4 ; i++)     
-      oloopm_set_speed(i,0);
-    sleep(1);
-    
-    printf("Moving forward at +1000 for 1 second\n");
-    for(i = 0 ; i < 4 ; i++)     
-	oloopm_set_speed(i,800);        
-    sleep(1);
-    
-    printf("Moving backward at -300 for 1 second\n");
-    for(i = 0 ; i < 4 ; i++)     
-	oloopm_set_speed(i,-800);
-    sleep(1);
-
-    for(i = 0 ; i < 4 ; i++)
-      {
-	printf("pulse_count(%d):%d\n",i, oloopenc_read_pulsecount(i) );    
-      }
-    printf("Clearing counters...\n");
-    for(i = 0 ; i < 4 ; i++)     
-	oloopenc_setzero(i);
-
-    printf("Moving forward for 30 seconds and counting\n");
-    for(i = 0 ; i < 4 ; i++)     
-	oloopm_set_speed(i,800);        
-    sleep(1);
- 
-    k = 1000;
-     
-    while(1){
- 	    l++;
-	    for( j = 0 ; j < 6 ; j++ ) 
-	    { 
-	      k = -k ; 
-              timestamp();
-	      for(i = 0 ; i < 4 ; i++)
-	      {
-		printf("%d - pulse_count(%d):%d\n",l,i, oloopenc_read_pulsecount(i) );    
-		oloopm_set_speed(i,k);
-	        servo_set_pos(i, HWSERVOS_TIME_MAX_ANGLE );       
-	      }
-	      sleep(1); 
-	      k = -k ; 
-              timestamp();
-	      for(i = 0 ; i < 4 ; i++)
-	      {
-		printf("%d - pulse_count(%d):%d\n",l,i, oloopenc_read_pulsecount(i) );    
-		oloopm_set_speed(i,k);
-	        servo_set_pos(i, HWSERVOS_TIME_MIN_ANGLE );       
-	      }
-	      sleep(1); 
-	    }
-            printf("Setting encoders to 0 \n");
-
-            for(i = 0 ; i < 4 ; i++)
-	    {
-		    oloopenc_setzero(i); 
-	    }
-    }
-    printf("Stopping\n");
-    for(i = 0 ; i < 4 ; i++)     
-      oloopm_set_speed(i,0);
-
-    unmap_motors();
-    unmap_qenc();
-}
-
-void test_servos()
-{
-  int i,j; 
-
-  printf("Mapping Servos\n");
-  map_servos();
-
-  printf("Move to minimum angle %d us\n",HWSERVOS_TIME_MIN_ANGLE );  
-  for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
-    servo_set_pos(i, HWSERVOS_TIME_MIN_ANGLE );
-  sleep(2);
-  
-  printf("Move to maximum angle %d us\n", HWSERVOS_TIME_MAX_ANGLE );
-  for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
-    servo_set_pos(i, HWSERVOS_TIME_MAX_ANGLE );
-  sleep(2);
-  
-  printf("Move to the center %d us \n", HWSERVOS_TIME_MID_ANGLE);
-  for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
-    servo_set_pos(i, HWSERVOS_TIME_MID_ANGLE );
-  sleep(2);
-  
-  printf("Moving through the whole range\n");
-  for( i = HWSERVOS_TIME_MIN_ANGLE; i < HWSERVOS_TIME_MAX_ANGLE  ; i += 10 ){
-    for(j = 0 ; j < HWSERVOS_NUM_OF ; j++) 
-      servo_set_pos(j , i );
-    
-    usleep(24000);
-  }
-
-  printf("Move to the center %d us \n", HWSERVOS_TIME_MID_ANGLE);
-  for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
-    servo_set_pos(i, HWSERVOS_TIME_MID_ANGLE );
-  
-  sleep(2);
-  
-  printf("Unmapping Servos\n");
-  unmap_servos();
-}
 
 int main( int argc, char** argv)
 {
@@ -465,35 +139,44 @@ int main( int argc, char** argv)
             break;
 
         case 'a':
-            test_accelerometer();
+//             test_accelerometer();
             break;
 
         case 'c':
-            test_compass();
+//             test_compass();
             break;
 
         case 's':
-            test_sonar();
+//             test_sonar();
             break;
 
         case 'm':
-            test_adc();
+//             test_adc();
             break;
 
         case 't':
-            test_temperature();
+//             test_temperature();
             break;
 
         case 'M':
-            test_motors();
+//             test_motors();
             break;
 
         case 'S':
-            test_servos();
+//             test_servos();
             break;
 
         case 'h':
-            printf( "\nUsage:\n GPIO test\t -g\n Compass\t -c\n Accelerometer\t -a\n Sonar\t -s\n Temperature\t -t\n ADC\t -m\n Motors\t -M\n Servos\t -S\n \n");
+            printf( " \nUsage:\n 
+		      GPIO test\t	 -g\n 
+		      Compass\t		 -c\n 
+		      Accelerometer\t	 -a\n 
+		      Sonar\t 		 -s\n 
+		      Temperature\t      -t\n 
+		      ADC\t 		 -m\n 
+		      Motors\t 		 -M\n 
+		      Servos\t 		 -S\n 
+		      \n");
             break;
 
         case '?':
@@ -507,3 +190,331 @@ int main( int argc, char** argv)
 
     return 0; 
 }
+
+// void test_compass()
+// {
+//     int i,res; 
+//     uint16_t deg;
+// 
+//     /* Testing I2C COMPASS */
+//     printf("Testing compass....\n"); 
+//     if(hmc6532_idcheck(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS) < 0 )
+//         printf("error!\n");
+//     else
+//         printf("ID successful\n");
+// 
+//     printf("Initializing in query mode\n") ; 
+// 
+//      if(( res =  hmc6532_init_query(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS)) < 0 ){
+//          printf(" ERROR when initializing compass: %d \n" , res ) ; 
+//          exit(1);
+//      }
+// 
+//     printf("Performing 5 measures\n") ; 
+//     //TODO: fix - first measure is rubbish (actually correspond with last read -> eeprom address register )
+//     hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg ); 
+// 
+//     for( i = 0 ; i < 5 ; i++ )
+//     {
+//         sleep(1); // wait for the first measures
+//         if(( res = hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg )) < 0 ){
+//             printf(" ERROR when reading compass: %d \n" , res ); 
+//             exit(1);
+//         }
+// 
+//         printf("0x%x\t Degrees: %f\n", deg, ((float)deg)/10); 
+//     }
+// 
+//     printf("Initializing in standby mode\n") ; 
+//     
+//      if(( res =  hmc6532_init_standby(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS)) < 0 ){
+//          printf(" ERROR when initializing compass: %d \n" , res ) ; 
+//          exit(1);
+//      }
+// 
+//     printf("Performing 5 measures\n") ; 
+//     //TODO: fix - first measure is rubbish (actually correspond with last read -> eeprom address register )
+//     hmc6532_read_wait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg ); 
+// 
+//     for( i = 0 ; i < 5 ; i++ )
+//     {
+//         sleep(1); // wait for the first measures
+//         if(( res = hmc6532_read_wait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg )) < 0 ){
+//             printf(" ERROR when reading compass: %d \n" , res ); 
+//             exit(1);
+//         }
+// 
+//         printf("0x%x\t Degrees: %f\n", deg, ((float)deg)/10); 
+//     }
+// 
+//     //----------- Continous -----------------------------------
+//     printf("Initializing in continous mode 10Hz\n") ; 
+// 
+//      if(( res =  hmc6532_init_continous(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS ,10)) < 0 ){
+//          printf(" ERROR when initializing compass: %d \n" , res ) ; 
+//          exit(1);
+//      }
+//     //TODO: fix - first measure is rubbish (actually correspond with last read -> eeprom address register )
+//     hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg ); 
+// 
+//     printf("Performing 5 measures\n") ; 
+//     for( i = 0 ; i < 5 ; i++ )
+//     {
+//         sleep(1); // wait for the first measures
+//         if(( res = hmc6532_read_nowait(I2C_MAGNETICCOMPASS_ADDRESS,I2C_MAGNETICCOMPASS_BUS,&deg )) < 0 ){
+//             printf(" ERROR when reading compass: %d \n" , res ); 
+//             exit(1);
+//         }
+// 
+//         printf("0x%x\t Degrees: %f\n", deg, ((float)deg)/10); 
+//     }
+// 
+// }
+// 
+// void test_accelerometer()
+// {
+//     lis3s lis3data;
+//     double x,y,z;
+//     /* Testing I2C/ACCELEROMETER */
+// 
+//     lis3lv02dl_init_3axis(I2C_ACCELEROMETER_ADDRESS, I2C_ACCELEROMETER_BUS);
+//     printf("Move the thing!\n");
+// 
+//     if( lis3lv02dl_calib(I2C_ACCELEROMETER_ADDRESS, I2C_ACCELEROMETER_BUS, &lis3data) < 0 ){
+//         printf("Cannot read!");
+//         exit(1);
+//     }else{
+//         printf("Calibration X = %d\tY = %d\tZ = %d\n", lis3data.xcal,lis3data.ycal,lis3data.zcal); 
+//     }
+// 
+//     while(1)
+//     {
+//         sleep(1);
+//         if( lis3lv02dl_read(I2C_ACCELEROMETER_ADDRESS, I2C_ACCELEROMETER_BUS, &lis3data) < 0 ){
+//             printf("Cannot read!");
+//         }
+// 
+//         x = (double)(lis3data.xacc - lis3data.xcal)/(SCALE_FACTOR_6G_16bit); 
+//         y = (double)(lis3data.yacc - lis3data.ycal)/(SCALE_FACTOR_6G_16bit); 
+//         z = (double)(lis3data.zacc - lis3data.zcal)/(SCALE_FACTOR_6G_16bit); 
+// 
+//         printf("X = %f\tY = %f\tZ = %f\n", x,y,z);
+// 
+//     }
+// 
+// }
+// void test_temperature()
+// {
+//     int16_t temp;
+// 
+//     /* Testing I2C/TEMP SENSOR */
+// 
+//     printf("Testing temp sensor\n");
+//     tcn75_init(I2C_TEMPSENSOR_ADDRESS, I2C_TEMPSENSOR_BUS );
+// 
+//     while(1)
+//     {
+//         tcn75_read(I2C_TEMPSENSOR_ADDRESS, I2C_TEMPSENSOR_BUS, &temp);
+//         printf(" Temp read: %.1f ºC\n", (double)temp/2 ); 
+//         sleep(1);
+//     }
+// }
+// 
+// void test_sonar()
+// {
+//      int i;
+//     /* Testing I2C/SONAR */
+//     printf("Firing SONAR 0\n");
+// 
+// //     i2cset(I2C_SONAR0_ADDRESS,0x00, 0x51,I2C_SONAR0_BUS, 'b' );
+// //     usleep(60000);
+// // 
+// //     for( i = 0 ; i < 6 ; i++){
+// //         res = i2cget(I2C_SONAR0_ADDRESS,i,I2C_SONAR0_BUS, 'b');
+// //         printf("Reg[0x%x]=%d\n",i,res);
+// //     }
+// 
+//     srf08_fire_cm(I2C_SONAR0_ADDRESS, I2C_SONAR0_BUS ); 
+//     srf08_sleep_max();
+//     printf("Light: 0x%x\n", srf08_get_light( I2C_SONAR0_ADDRESS, I2C_SONAR0_BUS ));
+// 
+//     for ( i = 0 ; i < 17 ; i++ ) 
+//         printf( "Echo[%d]: %d (cm)\n", i , srf08_get_echo(I2C_SONAR0_ADDRESS, I2C_SONAR0_BUS, i ));
+// 
+// }
+// 
+// void test_adc()
+// {
+//     xspidev xspi; 
+//     int i; 
+//     uint8_t* dest; 
+//     max1231_config adcconf; 
+//     /* Testing SPI / ADC */    
+//     spi_configure(&xspi, DEVSPI, 0, 0 , 0 , 0 , 0 , 0 , 0 , 0, 0); // TODO: Explain here
+//     spi_set_config(&xspi);
+// 
+//     // Configuration with Gyros in differential mode
+//     /*
+//     adcconf.pairs[4] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
+//     adcconf.pairs[5] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
+//     adcconf.pairs[6] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
+//     adcconf.clock = 0x64 ; 
+//     adc_config(&xspi, &adcconf );
+//     */
+//   
+//     // Configuration with Gyros in unipolar mode
+//     adc_reset(&xspi); 
+//     usleep(10000); // needed? 
+//     adc_config_all_uni_single(&xspi);
+//     usleep(10000); // needed?
+// 
+//     printf("Reading inputs in no-scan mode\n");
+//     printf("Temperature %f ºC \n",  adc_get_temperature(&xspi));
+//     adc_reset_fifo(&xspi);
+// 
+//     for( i = 0 ; i < 16 ; i++ )
+//     {
+//         printf("ADC_CHANNEL %d:\n", i);
+//         printf("%d\n",adc_read_one_once(&xspi,i));// scan 1 channel
+//     }
+// 
+// 
+//     dest = (uint8_t*) malloc(32) ; // 2*sizeof(uint8_t)
+// 
+//     printf("Reading inputs in scan mode\n");
+// 
+//     if( adc_read_scan_0_N(&xspi,dest, 15) < 0 )
+//         printf("Problems reading in Scan Mode 0 to N\n");
+//     else{
+//             for( i = 0 ; i < 16 ; i++ )
+//             {
+//                 printf("ADC CHANNEL %d:", i);
+//                 printf("%d\n",(int)( (int)dest[i*2+1] | ((int)dest[i*2]<<8)) );// scan 1 channel
+//             }
+//     }
+// 
+//     free(dest); 
+// 
+// }
+
+// void test_motors()
+// {
+//     int i,j; 
+//     volatile int* p; 
+//     int k, l; 
+//     l = 0; 
+//     
+//     printf("Mapping Motor and Quadrature encoders\n");
+//     map_motors();
+//     map_qenc();    
+//     map_servos();
+//     
+//     for(i = 0 ; i < 4 ; i++)     
+//       oloopm_set_freq_div(i,3);
+//     
+//     for(i = 0 ; i < 4 ; i++)     
+//       oloopm_set_speed(i,0);
+//     sleep(1);
+//     
+//     printf("Moving forward at +1000 for 1 second\n");
+//     for(i = 0 ; i < 4 ; i++)     
+// 	oloopm_set_speed(i,800);        
+//     sleep(1);
+//     
+//     printf("Moving backward at -300 for 1 second\n");
+//     for(i = 0 ; i < 4 ; i++)     
+// 	oloopm_set_speed(i,-800);
+//     sleep(1);
+// 
+//     for(i = 0 ; i < 4 ; i++)
+//       {
+// 	printf("pulse_count(%d):%d\n",i, oloopenc_read_pulsecount(i) );    
+//       }
+//     printf("Clearing counters...\n");
+//     for(i = 0 ; i < 4 ; i++)     
+// 	oloopenc_setzero(i);
+// 
+//     printf("Moving forward for 30 seconds and counting\n");
+//     for(i = 0 ; i < 4 ; i++)     
+// 	oloopm_set_speed(i,800);        
+//     sleep(1);
+//  
+//     k = 1000;
+//      
+//     while(1){
+//  	    l++;
+// 	    for( j = 0 ; j < 6 ; j++ ) 
+// 	    { 
+// 	      k = -k ; 
+//               timestamp();
+// 	      for(i = 0 ; i < 4 ; i++)
+// 	      {
+// 		printf("%d - pulse_count(%d):%d\n",l,i, oloopenc_read_pulsecount(i) );    
+// 		oloopm_set_speed(i,k);
+// 	        servo_set_pos(i, HWSERVOS_TIME_MAX_ANGLE );       
+// 	      }
+// 	      sleep(1); 
+// 	      k = -k ; 
+//               timestamp();
+// 	      for(i = 0 ; i < 4 ; i++)
+// 	      {
+// 		printf("%d - pulse_count(%d):%d\n",l,i, oloopenc_read_pulsecount(i) );    
+// 		oloopm_set_speed(i,k);
+// 	        servo_set_pos(i, HWSERVOS_TIME_MIN_ANGLE );       
+// 	      }
+// 	      sleep(1); 
+// 	    }
+//             printf("Setting encoders to 0 \n");
+// 
+//             for(i = 0 ; i < 4 ; i++)
+// 	    {
+// 		    oloopenc_setzero(i); 
+// 	    }
+//     }
+//     printf("Stopping\n");
+//     for(i = 0 ; i < 4 ; i++)     
+//       oloopm_set_speed(i,0);
+// 
+//     unmap_motors();
+//     unmap_qenc();
+// }
+// 
+// void test_servos()
+// {
+//   int i,j; 
+// 
+//   printf("Mapping Servos\n");
+//   map_servos();
+// 
+//   printf("Move to minimum angle %d us\n",HWSERVOS_TIME_MIN_ANGLE );  
+//   for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
+//     servo_set_pos(i, HWSERVOS_TIME_MIN_ANGLE );
+//   sleep(2);
+//   
+//   printf("Move to maximum angle %d us\n", HWSERVOS_TIME_MAX_ANGLE );
+//   for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
+//     servo_set_pos(i, HWSERVOS_TIME_MAX_ANGLE );
+//   sleep(2);
+//   
+//   printf("Move to the center %d us \n", HWSERVOS_TIME_MID_ANGLE);
+//   for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
+//     servo_set_pos(i, HWSERVOS_TIME_MID_ANGLE );
+//   sleep(2);
+//   
+//   printf("Moving through the whole range\n");
+//   for( i = HWSERVOS_TIME_MIN_ANGLE; i < HWSERVOS_TIME_MAX_ANGLE  ; i += 10 ){
+//     for(j = 0 ; j < HWSERVOS_NUM_OF ; j++) 
+//       servo_set_pos(j , i );
+//     
+//     usleep(24000);
+//   }
+// 
+//   printf("Move to the center %d us \n", HWSERVOS_TIME_MID_ANGLE);
+//   for(i = 0 ; i < HWSERVOS_NUM_OF ; i++) 
+//     servo_set_pos(i, HWSERVOS_TIME_MID_ANGLE );
+//   
+//   sleep(2);
+//   
+//   printf("Unmapping Servos\n");
+//   unmap_servos();
+// }
