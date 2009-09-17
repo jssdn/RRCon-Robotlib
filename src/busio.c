@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-
+#include <errno.h> 
  
 #ifdef __PPC__
 extern inline void out_8(volatile unsigned char *addr, unsigned val)
@@ -88,13 +88,13 @@ int mapio_region(volatile int** basep, long unsigned int baseadd, long unsigned 
     if( baseadd >= endadd )
     {
             printf( "Cannot allocate negative or zero size\n");
-            return -2;
+            return -EINVAL;
     }
 
     if( (*basep = (volatile int*) ioremap(baseadd, endadd - baseadd)) == NULL )
     {
             printf( "Cannot allocate memory at phy:0x%x-0x%x\n", (unsigned)baseadd, (unsigned)endadd); 
-            return -1;		
+            return -EADDRNOTAVAIL;		
     }
 
     #ifdef DEBUGMODE
@@ -110,7 +110,7 @@ inline int unmapio_region(volatile int** basep, long unsigned int baseadd, long 
     if( (iounmap(*basep, endadd - baseadd)) < 0 )
     {
                 printf( "Cannot unmap memory at phy:0x%x-0x%x\n", (unsigned)baseadd, (unsigned)endadd); 
-                return -1;		
+                return -ENXIO;		
     }
 
     return 0; 

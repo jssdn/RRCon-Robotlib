@@ -31,6 +31,10 @@
 #define GENERAL_INPUTS_PUSHBUT_MASK 0x0001f
 #define GENERAL_INPUTS_ACC_RDY_MASK 0x00020
 #define GENERAL_INPUTS_ADC_EOC_MASK 0x00040
+//TODO
+#define GENERAL_INPUTS_IRQ_NO 	7  
+#define GENERAL_INPUTS_IRQ_PRIO 1	  
+
 
 // TODO: Include bumpers into the General Inputs
 // Input bumpers 
@@ -42,5 +46,9 @@
 #define FPGA_GPIO8_BASE        0x401E0000
 #define FPGA_GPIO8_END         0x401E0000
 #define FPGA_GPIO8_NUM_OF_GPIO 8
+//TODO
+#define FPGA_GPIO8_IRQ_NO      8
+#define FPGA_GPIO8_IRQ_PRIO    1
+ 	  
 
 #endif 

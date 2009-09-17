@@ -1,4 +1,6 @@
 ## ROBOTLIB MAKEFILE ## Jorge Sanchez de Nova jssdn@kth.se ##
+# NOTE: FOR CROSS COMPILING USE STH LIKE THIS: 
+# > DESTDIR="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/" make LD_LIBRARY_PATH="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/lib" XENO="~/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/" ARCH="powerpc" KSRC="~/xenomai/linux-2.6-denx/" robotlib
 
 ###### COMPILER CONFIGURATION ######
 CROSS_COMPILE ?= 
@@ -15,8 +17,9 @@ AR = $(CROSS_COMPILE)ar rcs
 
 #SOURCES = src/xspidev.c src/max1231adc.c src/i2ctools.c src/i2ctools/i2cbusses.c src/srf08.c src/lis3lv02dl.c src/tcn75.c src/hmc6352.c src/busio.c src/gpio.c src/lcd_proc.c src/openloop_motors.c src/hwservos.c
 
-SOURCES = src/busio.c src/gpio.c
-OBJECTS = $(SOURCES:.c=.o)
+SOURCES = src/busio.c src/gpio.c src/util.c
+# OBJECTS = $(SOURCES:.c=.o) # TODO:sed missing to remove src
+OBJECTS = busio.o gpio.o util.o 
 LIBNAME = librobot.a
 DEBUG = -DDEBUGMODE
 
@@ -88,7 +91,7 @@ banner:
 	@echo  
 
 robotlib: banner $(SOURCES)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) -c $(SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) -c $(SOURCES) -o $(OBJECTS)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
 
 examples: lib/$(LIBNAME)

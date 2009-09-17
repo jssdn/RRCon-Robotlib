@@ -7,7 +7,7 @@ v 0.34
 ------
 -- hwservo.c/.h: Servo core functionality to move in a bigger range from the standard (1-2ms). 
 -- robex : Adapted servo example
--- openloop_motors.c/.h: Comments added. Fix oloopenc_read_pulsecount read positive/negative pulses
+-- openloop_motors.c/.h: Comments addlsed. Fix oloopenc_read_pulsecount read positive/negative pulses
 -- gpio_maps.h: Added address for mapping of an 8 bit core for the FPGA_GPIO port 
 -- robotdevices.h: Cleaned
 -- i2ctools.c/.h: Added functionality for thread safe (pthread mutex) i2c calls. 

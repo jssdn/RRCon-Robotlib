@@ -3,24 +3,34 @@
 
 #define GPIO_TRISTATE_OFFSET 1 
 
+struct struct_gpio
+{
+	volatile int* vadd;
+	unsigned long base_add; 
+	unsigned long end_add;
+	char flags; // IO/Allow Interrupt
+	unsigned tristate; 
+	RT_MUTEX mutex;
+	RT_TASK interrupt_task;
+	RT_INTR intr_desc;
+	void (*isr)(void*); // ISR
+};
 
-// enum{
-//     LEFT = 0x01, 
-//     RIGHT = 0x02,
-//     UP = 0x03,
-//     DOWN = 0x04,
-//     CENTER = 0x05
-// } directions; 
+typedef struct struct_gpio GPIO; 
 
-int map_gpio();
+int gpio_write(GPIO* gpio, unsigned mask, unsigned offset, unsigned value);
+int gpio_read(GPIO* gpio, unsigned mask, unsigned offset, unsigned* ret);
 
-int unmap_gpio();
+//so far only for 1channel gpios
+int gpio_init(GPIO* gpio, 
+	      long unsigned int base_add, 
+	      long unsigned int end_add, 
+	      unsigned tristate, 
+	      char flags, 
+	      unsigned irqno,
+	      void (*isr)(void*),
+	      int irq_prio);
 
-inline void write_led4(uint8_t val);
-
-inline void write_led_dir(uint8_t val);
-
-// Polling
-inline uint8_t read_buttons();
+int gpio_clean(GPIO* gpio);
 
 #endif
