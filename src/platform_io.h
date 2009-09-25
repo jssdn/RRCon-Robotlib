@@ -1,84 +1,57 @@
-isr 
-// Should exist here?
-int gpio_mapall()
-{
-    int res;
+#ifndef __PLATFORM_IO_H__
+#define __PLATFORM_IO_H__
 
-    if( (res = mapio_region(&led4_base, LED4_BASE, LED4_END)) < 0 ) 
-        return res; 
-    printf("led4_base 0x%x\n",led4_base);
-    *(led4_base + GPIO_TRISTATE_OFFSET) = 0x00 ; // configured as outputs
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <linux/types.h>
+#include <errno.h>
 
-    if( (res = mapio_region(&dirled_base, DIRLED_BASE,DIRLED_END)) < 0 ) 
-        return res; 
+#include "gpio_maps.h"
+#include "gpio.h"
+#include "util.h"
+// 
 
-    *(dirled_base + GPIO_TRISTATE_OFFSET) = 0x00 ; // configured as outputs
+extern GPIO pio_geninputs; // Buttons / ADC EOC / ACC_INT / BUMPERS
+extern GPIO pio_genoutputs; // LCD / LEDS4 / LEDs_Position / USB_RESET
+extern GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
 
-    if( (res = mapio_region(&buttons_base, BUTTONS_BASE,BUTTONS_END)) < 0 ) 
-        return res; 
+/* Separate initializations for the devices */
+inline int pio_init_geninputs(void (*fisr)(void*));
 
-    *(buttons_base + GPIO_TRISTATE_OFFSET) = 0xff ; // configured as inputs
+inline int pio_init_genoutputs();
 
-    if( (res = mapio_region(&bumpers_base, BUMPERS_BASE,BUMPERS_END)) < 0 ) 
-        return res; 
+inline int pio_init_fpgagpio(void (*fisr)(void*));
 
-    *(bumpers_base + GPIO_TRISTATE_OFFSET) = 0xff ; // configured as inputs
+/* Joint functions for automated init of all devices */
+int pio_init_all(void (*isr_ginputs)(void*), void (*isr_fpga)(void*));
 
-    return 0; 
-}
+int pio_clean_all();
 
-int gpio_unmapall()
-{
-    int res;
+/* Helpful easy-to-read high-level functions for gpio device read */
 
-    if( (res = unmapio_region(&led4_base,LED4_BASE,LED4_END)) < 0 )
-            return res;		
+/* LED BAR 4 bits */
+inline int pio_read_leds4(unsigned* ret);
 
-    if( (res = unmapio_region(&dirled_base,DIRLED_BASE,DIRLED_END)) < 0 )
-            return res;		
+inline int pio_write_leds4(unsigned value);
 
-    if( (res = unmapio_region(&buttons_base, BUTTONS_BASE,BUTTONS_END)) < 0 )
-            return res;		
+/* ARROW POSITION LEDS */
+inline int pio_read_ledspos(unsigned* ret);
 
-    return 0; 
-}
+inline int pio_write_ledspos(unsigned value);
 
-/*inline void write_led4(uint8_t val)
-{
-    *led4_base = val & 0x0f;
-}
+/* ARROW POSITION BUTTONS */
+inline int pio_read_buttons(unsigned* ret);
+/* FPGA_GPIO8 */
+inline int pio_read_fpgagpio(unsigned* ret);
 
-inline void write_led_dir(uint8_t val)
-{
-    *dirled_base = val & 0x1f; 
-}
+inline int pio_write_fpgagpio(unsigned value);
 
-// Polling
-inline uint8_t read_buttons()
-{
-    return *buttons_base;
-}
+inline int pio_write_fpgagpio_tristate(unsigned value);
 
-inline uint8_t read_bumpers()
-{
-  return *bumpers_base; */
-}
-
-// enum{
-//     LEFT = 0x01, 
-//     RIGHT = 0x02,
-//     UP = 0x03,
-//     DOWN = 0x04,
-//     CENTER = 0x05
-// } directions; 
-
-int map_gpio();
-
-int unmap_gpio();
-
-inline void write_led4(uint8_t val);
-
-inline void write_led_dir(uint8_t val);
-
-// Polling
-inline uint8_t read_buttons();
+#endif

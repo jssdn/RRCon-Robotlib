@@ -1,7 +1,10 @@
 v 0.4 - Xenomai
 ------
--- Makefile ready for xenomai autoconfig
 -- Total rewrite for Xenomai integration
+-- gpio.c/.h: support for interrupts and safe multiple access to registers 
+	      now is a more general intermediate layer for gpio modules
+-- platform_io.c/.h  Added high-level functions to control the basic gpio_devices (leds, buttons,...)
+
 
 v 0.34
 ------

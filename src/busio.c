@@ -1,8 +1,23 @@
 /*
- *   Project: Robotics library for the Autonomous Robotics Development Platform  
- *   Code: busio.c Low-level direct-IO allocations
- *   Mods:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
- *   Original code from Stephane Fillod (C) 2003
+    Project: Robotics library for the Autonomous Robotics Development Platform  
+    Code: busio.c Low-level direct-IO allocations
+    Mods:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+    Original code from Stephane Fillod (C) 2003
+ 
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
  */
 
 #include <stdio.h>
@@ -15,16 +30,18 @@
 #include <sys/mman.h>
 #include <errno.h> 
  
+#include "util.h"
+
 #ifdef __PPC__
 extern inline void out_8(volatile unsigned char *addr, unsigned val)
 {
-        __asm__ __volatile__("stb%U0%X0 %1,%0; eieio" : "=m" (*addr) : "r" (val));
+    __asm__ __volatile__("stb%U0%X0 %1,%0; eieio" : "=m" (*addr) : "r" (val));
 }
 /* etc., cf asm/io.h */
 #else
 extern inline void out_8(volatile unsigned char *addr, unsigned val)
 {
-        *addr = val & 0xff;
+    *addr = val & 0xff;
 }
 #endif
 
@@ -50,7 +67,7 @@ volatile void * ioremap(unsigned long physaddr, unsigned size)
     if (axs_mem_fd == -1) {
         axs_mem_fd = open("/dev/mem", O_RDWR|O_SYNC);
         if (axs_mem_fd < 0) {
-                perror("AXS: can't open /dev/mem");
+                util_pdbg(DBG_WARN, "ioremap: can't open /dev/mem\n");
                 return NULL;
         }
     }
@@ -65,7 +82,7 @@ volatile void * ioremap(unsigned long physaddr, unsigned size)
         page_addr
     );
     if (reg_mem == MAP_FAILED) {
-        perror("AXS: mmap error");
+	util_pdbg(DBG_WARN, "ioremap: mmap error\n");        
         close(axs_mem_fd);
         return NULL;
     }
@@ -87,18 +104,18 @@ int mapio_region(volatile int** basep, long unsigned int baseadd, long unsigned 
 {
     if( baseadd >= endadd )
     {
-            printf( "Cannot allocate negative or zero size\n");
+	    util_pdbg(DBG_WARN, "Cannot allocate negative or zero size\n");        
             return -EINVAL;
     }
 
     if( (*basep = (volatile int*) ioremap(baseadd, endadd - baseadd)) == NULL )
     {
-            printf( "Cannot allocate memory at phy:0x%x-0x%x\n", (unsigned)baseadd, (unsigned)endadd); 
-            return -EADDRNOTAVAIL;		
+	util_pdbg(DBG_WARN, "Cannot allocate memory at phy:0x%x-0x%x\n", (unsigned)baseadd, (unsigned)endadd);
+	return -EADDRNOTAVAIL;		
     }
 
     #ifdef DEBUGMODE
-    printf( "Memory mapped at phy:0x%x-0x%x vrt=0x%x\n", (unsigned)baseadd, (unsigned)endadd, *basep); 
+    util_pdbg(DBG_DEBG, "Memory mapped at phy:0x%x-0x%x vrt=0x%x\n", (unsigned)baseadd, (unsigned)endadd, *basep); 
     #endif
 
     return 0;
@@ -109,8 +126,8 @@ inline int unmapio_region(volatile int** basep, long unsigned int baseadd, long 
 
     if( (iounmap(*basep, endadd - baseadd)) < 0 )
     {
-                printf( "Cannot unmap memory at phy:0x%x-0x%x\n", (unsigned)baseadd, (unsigned)endadd); 
-                return -ENXIO;		
+	util_pdbg(DBG_WARN, "Cannot unmap memory at phy:0x%x-0x%x\n", (unsigned)baseadd, (unsigned)endadd); 
+	return -ENXIO;		
     }
 
     return 0; 

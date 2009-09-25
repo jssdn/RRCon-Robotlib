@@ -17,9 +17,9 @@ AR = $(CROSS_COMPILE)ar rcs
 
 #SOURCES = src/xspidev.c src/max1231adc.c src/i2ctools.c src/i2ctools/i2cbusses.c src/srf08.c src/lis3lv02dl.c src/tcn75.c src/hmc6352.c src/busio.c src/gpio.c src/lcd_proc.c src/openloop_motors.c src/hwservos.c
 
-SOURCES = src/busio.c src/gpio.c src/util.c
+SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c
 # OBJECTS = $(SOURCES:.c=.o) # TODO:sed missing to remove src
-OBJECTS = busio.o gpio.o util.o 
+OBJECTS = busio.o gpio.o util.o platform_io.o
 LIBNAME = librobot.a
 DEBUG = -DDEBUGMODE
 

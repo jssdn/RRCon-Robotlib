@@ -1,7 +1,13 @@
 #ifndef __GPIO_H__
 #define __GPIO_H__
 
+#include <native/mutex.h>
+#include <native/task.h>
+#include <native/intr.h>
+
 #define GPIO_TRISTATE_OFFSET 1 
+#define GPIO_FLAGS_INPUT 0x01	
+#define GPIO_FLAGS_OUTPUT 0x02 
 
 struct struct_gpio
 {
