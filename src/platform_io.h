@@ -10,16 +10,11 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <linux/types.h>
-#include <errno.h>
+#include <errno.h> 
 
-#include "gpio_maps.h"
-#include "gpio.h"
-#include "util.h"
-// 
-
-extern GPIO pio_geninputs; // Buttons / ADC EOC / ACC_INT / BUMPERS
-extern GPIO pio_genoutputs; // LCD / LEDS4 / LEDs_Position / USB_RESET
-extern GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
+// GPIO pio_geninputs; // Buttons / ADC EOC / ACC_INT / BUMPERS
+// GPIO pio_genoutputs; // LCD / LEDS4 / LEDs_Position / USB_RESET
+// GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
 
 /* Separate initializations for the devices */
 inline int pio_init_geninputs(void (*fisr)(void*));
@@ -53,5 +48,7 @@ inline int pio_read_fpgagpio(unsigned* ret);
 inline int pio_write_fpgagpio(unsigned value);
 
 inline int pio_write_fpgagpio_tristate(unsigned value);
+
+// TODO: LCD Functions 
 
 #endif

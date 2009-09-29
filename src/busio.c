@@ -1,4 +1,4 @@
-/*
+/**
     Project: Robotics library for the Autonomous Robotics Development Platform  
     Code: busio.c Low-level direct-IO allocations
     Mods:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
@@ -18,7 +18,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
- */
+ **/
 
 #include <stdio.h>
 #include <stdlib.h>

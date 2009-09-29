@@ -1,4 +1,4 @@
-/* *******************************************************************************
+/** *******************************************************************************
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
     Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
@@ -22,7 +22,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-*  ******************************************************************************* */
+*  ******************************************************************************* **/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,14 +36,16 @@
 #include <errno.h>
 
 #include "platform_io.h"
-#include "gpio_maps.h"
+#include "dev_mmaps_parms.h"
 #include "gpio.h"
 #include "util.h"
-// 
+
+// TODO: LCD 16x2 Functions 
 
 GPIO pio_geninputs; // Buttons / ADC EOC / ACC_INT / BUMPERS
-GPIO pio_genoutputs; // LCD / LEDS4 / LEDs_Position / USB_RESET
+GPIO pio_genoutputs; // LEDS4 / LEDs_Position / USB_RESET
 GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
+GPIO pio_lcd; // LCD / 
 
 inline int pio_init_geninputs(void (*fisr)(void*))
 {
@@ -155,7 +157,6 @@ inline int pio_read_fpgagpio(unsigned* ret)
 {
     return gpio_read(&pio_genoutputs, FPGA_GPIO8_MASK, 0, ret);    
 }
-
 
 inline int pio_write_fpgagpio(unsigned value)
 {

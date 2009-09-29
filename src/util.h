@@ -28,5 +28,6 @@ void util_pdbg(int msg, char *fmt, ...);
 inline void util_pdbg(int msg, char *fmt, ...);
 #endif 
 
+void print_timestamp();
 
 #endif 

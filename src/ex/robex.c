@@ -1,4 +1,4 @@
-/* *******************************************************************************
+/** ******************************************************************************
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
     Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
@@ -20,7 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-*  ******************************************************************************* */
+*  ******************************************************************************* **/
 
 #include <stdint.h>
 #include <unistd.h>
@@ -34,86 +34,54 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-//#include "busio.h"	     // TODO: Shouldn't go here!!
-// Lib includes 
-// #include "xspidev.h"         // SPI COMMANDS
-// #include "max1231adc.h"      // ADC
-// #include "adcdevices.h"      // ADC DEVICES DEFINES
-// #include "i2cdevices.h"      // I2C DEVICES DEFINES
-// #include "i2ctools.h"        // I2C COMMANDS
  #include "version.h"         // LIB VERSION
-// #include "srf08.h"           // SONAR
-// #include "lis3lv02dl.h"      // ACCELEROMETER
-// #include "tcn75.h"           // TEMP SENSOR
-// #include "hmc6352.h"         // COMPASS
-#include "gpio.h"            // GPIO ( LEDS AND BUTTONS) 
+ #include "gpio.h"            // GPIO 
+ #include "platform_io.h"     // High-level functions for GPIO devices
+
 // #include "lcd_proc.h"        // 16x2 LCD 
-#include "openloop_motors.h" // MOTORS
+// #include "openloop_motors.h" // MOTORS
 // #include "hwservos.h"	     // SERVOS
 
 #define DEVSPI "/dev/spi0"
 
-void timestamp()  
-{  
-     time_t ltime; /* calendar time */  
-     ltime=time(NULL); /* get current cal time */  
-     printf("%s",asctime( localtime(&ltime) ) );  
-}  
 
+void geninputs_isr(void *cookie) {
+// 	int err = 0;
+// 	int error;
+// 	error = rt_pipe_create(&mypipe, "intpipe", PIPE_MINOR, 0);
+// 	// todo: add error handling
+// 	while (!end) {
+// 		err = rt_intr_wait(&intr_desc, TM_INFINITE);
+// 		if (err > 0) {
+// 			int_count++;
+// 			rt_pipe_write(&mypipe, &int_count, sizeof(int_count), P_NORMAL);
+// 		} else {
+// 			//printf("interrupt_task error = %i\n", err);
+// 		}
+// 		rt_intr_enable (&intr_desc);
+// 	}
+// 	rt_pipe_delete(&mypipe);
+
+	// if buttons, then ligth the equivalent led, otherwise ignore.
+}
 
 void test_gpio()
 {
-    int i,tmp;
-    uint8_t keep = 1;
-
-    printf("Mapping GPIO...\n");
-    if ( map_gpio() < 0 ){
-        printf("Error!\n");
-        exit(-1);
+    int res; 
+    /* Init all of the 
+    if( ( res = pio_initall(geninputs_isr, NULL) ) < 0 ){
+	util_pdbg(DBG_CRIT, "Error initializing GPIOs %d", res);
+	exit(res); 
     }
-
-    printf("Testing 4bit leds...\n");
-    for( i = 0 ; i < 17 ; i++ )
-    {
-        write_led4(i);
-        usleep(250000); // 1/4 sec
-    }
-
-    printf("Testing direction leds...\n");
-
-    for( i = 0 ; i < 33 ; i++ )
-    {
-        write_led_dir(i);
-        usleep(125000); // 1/8 sec
-    }
-
-    printf("Testing buttons... Press left+right to exit.\n");
-    while(keep)
-    {
-        if( (tmp = read_buttons()) == 0x0a ){ // left + right         
-            write_led_dir(0);
-            keep = 0;
-        }else{
-            write_led_dir(tmp);
-        }
-    }
-    
-    printf("Unmapping GPIO...\n");
-    unmap_gpio();
+	
 }
 
+*/
 
 int main( int argc, char** argv)
 {
 
     int opts; 
-
-    printf("------------------------------------------------------------\n");
-    printf("%s Version:%s\n",ROBOTLIB_NAME_STRING,ROBOTLIB_VERSION_STRING);
-    printf("Author:%s \n",ROBOTLIB_AUTHOR_STRING);
-    printf("Release notes:%s \n",ROBOTLIB_REVISION_STRING );
-    printf("------------------------------------------------------------\n");
-
 
     while (1) {
 

@@ -1,4 +1,4 @@
-/* *******************************************************************************
+/** *******************************************************************************
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
     Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
@@ -20,7 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-*  ******************************************************************************* */
+*  ******************************************************************************* **/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,12 +41,12 @@
 //--
 
 #include "busio.h"
-#include "gpio_maps.h"
+#include "dev_mmaps_parms.h"
 #include "gpio.h"
 #include "util.h"
 // 
 
-
+//TODO: Non-blocking functions
 int gpio_write(GPIO* gpio, unsigned mask, unsigned offset, unsigned value)
 {
     int err; 
@@ -130,6 +130,7 @@ int gpio_init(GPIO* gpio,
     gpio->isr = &fisr;
 
     return 0; 
+//TODO: Error clean through tag cleaning
 }
 
 int gpio_clean(GPIO* gpio)
@@ -137,6 +138,10 @@ int gpio_clean(GPIO* gpio)
     int err; 
     // unmap
     util_pdbg(DBG_DEBG, "Cleaning GPIO... ");
+    if ( (err = unmapio_region(&(gpio->vadd), gpio->base_add, gpio->end_add)) < 0 ){
+	util_pdbg(DBG_WARN, "GPIO couldn't be unmapped at virtual= %ld . Error : %d \n", &(gpio->vadd), err);
+	return err; 
+    }
     // delete mutex
     if( ( err = rt_mutex_delete(&(gpio->mutex)) ) < 0 ){
 	util_pdbg(DBG_WARN, "GPIO Mutex cannot be deleted \n");

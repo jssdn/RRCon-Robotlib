@@ -1,7 +1,7 @@
 #ifndef __GPIOMAPS_H__
 #define __GPIOMAPS_H__
 
-/* *******************************************************************************
+/** *******************************************************************************
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
     Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
@@ -23,21 +23,28 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-*  ******************************************************************************* */
+*  ******************************************************************************* **/
 
 // TODO: Get them in an automated manner
 
-//Several devices are attached to the following outputs. A 16x2 LCD (7 bit), 4 LEDs (4bit), 5 Position LEDS (5bit) and a USB_RESET_SIGNAL(1bit)
+/** GPIOs **/
+
+/* GPIO for General Outputs */
+/* Several devices are attached to the following outputs -
+   4 LEDs (4bit), 5 Position LEDS (5bit) and a USB_RESET_SIGNAL(1bit) */
 
 #define GENERAL_OUTPUTS_BASE        0x814a0000
 #define GENERAL_OUTPUTS_END         0x814affff
 #define GENERAL_OUTPUTS_NUM_OF_GPIO 17
-#define GENERAL_OUTPUTS_LCD_MASK    0x0007f
-#define GENERAL_OUTPUTS_LED4_MASK   0x00780
-#define GENERAL_OUTPUTS_LEDPOS_MASK 0x0f800
-//#define GENERAL_USB_RESET_MASK    0x10000 /* Not for use */
 
-//Several devices are attached to the following inputs. Directional buttons (5bit), an Accelerator interrupt line (1bit) and an ADC End Of Conversion signal (1bit)
+#define GENERAL_OUTPUTS_LED4_MASK   0x0000f
+#define GENERAL_OUTPUTS_LEDPOS_MASK 0x001f0
+//#define GENERAL_USB_RESET_MASK    0x00200 /* Not for use */
+
+/* GPIO for General Inputs */
+
+/* Several devices are attached to the following inputs - 
+   Directional buttons (5bit), an Accelerator interrupt line (1bit) and an ADC End Of Conversion signal (1bit) */
 
 #define GENERAL_INPUTS_BASE         0x81420000
 #define GENERAL_INPUTS_END          0x8142ffff
@@ -45,26 +52,41 @@
 #define GENERAL_INPUTS_PUSHBUT_MASK 0x0001f
 #define GENERAL_INPUTS_ACC_RDY_MASK 0x00020
 #define GENERAL_INPUTS_ADC_EOC_MASK 0x00040
-//TODO
+#define GENERAL_INPUTS_BUMPERS_BASE 0x00780
 #define GENERAL_INPUTS_IRQ_NO 	7  
 #define GENERAL_INPUTS_IRQ_PRIO 1	  
 
+/* Output IO for LCD 16x2 */
+#define LCD16X2_BASE        0x81460000
+#define LCD16X2_END         0x8146ffff
+#define LCD16X2_NUM_OF_GPIO 7
+#define LCD16X2_LCD_MASK    0x0007f
 
-// TODO: Include bumpers into the General Inputs
-// Input bumpers 
-
-// #define BUMPERS_BASE 0x400E0000
-// #define BUMPERS_END  0x400Effff
-
-// 8bit GPIO
-#define FPGA_GPIO8_BASE        0x401E0000
-#define FPGA_GPIO8_END         0x401E0000
+/* 8 Bit GPIO */
+#define FPGA_GPIO8_BASE        0x81480000
+#define FPGA_GPIO8_END         0x81480000
 #define FPGA_GPIO8_NUM_OF_GPIO 8
-#define FPGA_GPIO8_MASK	       0xff
-//TODO
+#define FPGA_GPIO8_MASK	       0x00ff
 #define FPGA_GPIO8_IRQ_NO      8
 #define FPGA_GPIO8_IRQ_PRIO    1
 
- 	  
+/** Motor devices **/
+
+/* PWM module */
+#define MOTORS_BASE 0xca400000
+#define MOTORS_END  0xca40ffff
+#define MOTORS_MAX_NUM_OF_CORES 16
+#define MOTORS_MAX_SPEED 1023   /* 11 bits signed  - PWM Duty Cycle */
+#define MOTORS_MAX_FREQ_DIV 255 /* 8 bits unsigned - Frequency divider over BUS Frequency */
+
+/* Quadrature decoders */
+#define QENC_BASE 0xc4600000
+#define QENC_END  0xc460ffff
+#define QENC_MAX_NUM_OF_CORES 16
+
+/* PID Core address */
+//TODO: Yet to be implemented
+//#define PID_BASE 0x75020000
+//#define PID_END  0x7502ffff
 
 #endif 
