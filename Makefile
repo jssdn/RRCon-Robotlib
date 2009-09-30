@@ -1,6 +1,6 @@
 ## ROBOTLIB MAKEFILE ## Jorge Sanchez de Nova jssdn@kth.se ##
 # NOTE: FOR CROSS COMPILING USE STH LIKE THIS: 
-# > DESTDIR="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/" make LD_LIBRARY_PATH="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/lib" XENO="~/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/" ARCH="powerpc" KSRC="~/xenomai/linux-2.6-denx/" robotlib
+# > DESTDIR="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/" make LD_LIBRARY_PATH="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/lib" XENO="~/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/" ARCH="powerpc" KSRC="~/xenomai/linux-2.6-denx/" all
 
 ###### COMPILER CONFIGURATION ######
 CROSS_COMPILE ?= 
@@ -23,9 +23,10 @@ OBJECTS = busio.o gpio.o util.o platform_io.o motors.o
 LIBNAME = librobot.a
 DEBUG = -DDEBUGMODE
 
-EXSOURCES = src/ex/robex.c
+EXSOURCES = src/ex/platex.c
+#EXSOURCES = xenomai_examples/control.c
 EXOBJECTS = $(EXSOURCES:.c=.o)
-EXBIN = bin/robex
+EXBIN = bin/platex
 INCLUDES = -Isrc/ -Isrc/i2ctools/
 LDBIN = -Llib/ -lrobot
 CFLAGSBIN = -g -Wall 
@@ -56,7 +57,7 @@ CC=$(shell $(XENOCONFIG) --cc)
 
 CFLAGS=$(shell $(XENOCONFIG) --xeno-cflags) $(MY_CFLAGS)
 
-LDFLAGS=$(shell $(XENOCONFIG) --xeno-ldflags) $(MY_LDFLAGS) -O
+LDFLAGS=$(shell $(XENOCONFIG) --xeno-ldflags) $(MY_LDFLAGS) -lnative -O
 
 # This includes the library path of given Xenomai into the binary to make live
 # easier for beginners if Xenomai's libs are not in any default search path.
@@ -70,32 +71,48 @@ banner:
 	@echo  
 	@echo -----------------------------------------------------------------------	
 	@echo - Debug version of libraries: extra debugging output, no optimization 
-	@echo - To create non-debug versions: make release                  
+	@echo - To create non-debug versions: append "BUILD_TYPE = RELEASE"
 	@echo -----------------------------------------------------------------------
 	@echo  
 
 robotlib: banner $(SOURCES)
+	@echo 
+	@echo ----------------------------librobot------------------------------------
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) -DDEBUGMODE $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
-
+	@echo ----------------------------Lib done!-----------------------------------
+	@echo 
+	
 examples: lib/$(LIBNAME)
+	@echo 
+	@echo ----------------------------examples-----------------------------------
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) -DDEBUGMODE $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN)
+	@echo ----------------------------Examples done!-----------------------------
+	@echo 
 	
 else
 banner: 
 	@echo  
 	@echo -----------------------------------------------------------------------
 	@echo - Release version of libraries: no debugging output.
-	@echo - To create debug versions: make debug
+	@echo - To create debug versions: append "BUILD_TYPE = DEBUG"
 	@echo -----------------------------------------------------------------------
 	@echo  
 
 robotlib: banner $(SOURCES)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) -c $(SOURCES) -o $(OBJECTS)
+	@echo 
+	@echo ----------------------------librobot------------------------------------
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
+	@echo ----------------------------Lib done!-----------------------------------
+	@echo 
 
 examples: lib/$(LIBNAME)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN)
+	@echo 
+	@echo ----------------------------examples-----------------------------------
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN) 
+	@echo ----------------------------Examples done!-----------------------------
+	@echo 
 
 endif
 

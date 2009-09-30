@@ -25,6 +25,7 @@
 *  ******************************************************************************* **/
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <time.h>
 #include "util.h"
 #include "version.h" 
@@ -36,11 +37,16 @@ void util_pdbg(int msg, char *fmt, ...)
 inline void util_pdbg(int msg, char *fmt, ...)
 #endif 
 { 
-  #if DBG_LEVEL == 0
+  #if DBG_LEVEL != 0
+  va_list args_ptr;
   static char buf[DBG_MSG_LENGTH];
 
   if ( msg <= DBG_LEVEL ) {  
-      vsprintf(buf, fmt, arg_ptr);
+      va_start(args_ptr,fmt);
+      vsprintf(buf, fmt, args_ptr);
+//       strcat(buf, "\n");
+      va_end(args_ptr);
+/*      printf("%s",buf);*/
       fprintf(stderr, buf);
       fflush(stderr);
     }

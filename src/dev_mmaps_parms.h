@@ -37,8 +37,10 @@
 #define GENERAL_OUTPUTS_END         0x814affff
 #define GENERAL_OUTPUTS_NUM_OF_GPIO 17
 
-#define GENERAL_OUTPUTS_LED4_MASK   0x0000f
-#define GENERAL_OUTPUTS_LEDPOS_MASK 0x001f0
+#define GENERAL_OUTPUTS_LED4_MASK    0x0000f
+#define GENERAL_OUTPUTS_LED4_SHIFT   0
+#define GENERAL_OUTPUTS_LEDPOS_MASK  0x001f0
+#define GENERAL_OUTPUTS_LEDPOS_SHIFT 4
 //#define GENERAL_USB_RESET_MASK    0x00200 /* Not for use */
 
 /* GPIO for General Inputs */
@@ -64,7 +66,7 @@
 
 /* 8 Bit GPIO */
 #define FPGA_GPIO8_BASE        0x81480000
-#define FPGA_GPIO8_END         0x81480000
+#define FPGA_GPIO8_END         0x8148ffff
 #define FPGA_GPIO8_NUM_OF_GPIO 8
 #define FPGA_GPIO8_MASK	       0x00ff
 #define FPGA_GPIO8_IRQ_NO      8

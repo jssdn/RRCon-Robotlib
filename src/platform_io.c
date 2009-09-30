@@ -40,12 +40,13 @@
 #include "gpio.h"
 #include "util.h"
 
-// TODO: LCD 16x2 Functions 
 
 GPIO pio_geninputs; // Buttons / ADC EOC / ACC_INT / BUMPERS
 GPIO pio_genoutputs; // LEDS4 / LEDs_Position / USB_RESET
 GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
 GPIO pio_lcd; // LCD / 
+
+// TODO: LCD 16x2 Functions 
 
 inline int pio_init_geninputs(void (*fisr)(void*))
 {
@@ -86,12 +87,12 @@ int pio_init_all(void (*isr_ginputs)(void*), void (*isr_fpga)(void*))
 uninit_fpga:    
     gpio_clean(&pio_geninputs);
     gpio_clean(&pio_genoutputs);
-    util_pdbg(DBG_WARN, "GPIO FPGA_GPIO8 could not be initialized. Cleaning previosly initialized. Error:%d", res);
+    util_pdbg(DBG_WARN, "GPIO FPGA_GPIO8 could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
 uninit_go_fpga:    
     gpio_clean(&pio_geninputs);
-    util_pdbg(DBG_WARN, "GPIO \"General Outputs\" could not be initialized. Cleaning previosly initialized. Error:%d", res);
+    util_pdbg(DBG_WARN, "GPIO \"General Outputs\" could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
 uninit_any:    
-    util_pdbg(DBG_WARN, "GPIO \"General Inputs\" could not be initialized. Error:%d", res);
+    util_pdbg(DBG_WARN, "GPIO \"General Inputs\" could not be initialized. Error:%d\n", res);
     return res;
 }
 
@@ -113,9 +114,9 @@ int pio_clean_all()
 uncleaned_all:
    util_pdbg(DBG_WARN, "Error cleaning \"General Inputs\" GPIO. None could be cleaned. Error:%d \n", res);
 uncleaned_gout:
-   util_pdbg(DBG_WARN, "Error cleaning \"General Outputs\". \"General Inputs\" could be cleaned. ", res);
+   util_pdbg(DBG_WARN, "Error cleaning \"General Outputs\". \"General Inputs\" could be cleaned.\n ", res);
 uncleaned_fpga:
-   util_pdbg(DBG_WARN, "Error cleaning GPIOs. \"General Inputs/Outputs\" could be cleaned. ", res);
+   util_pdbg(DBG_WARN, "Error cleaning GPIOs. \"General Inputs/Outputs\" could be cleaned. \n", res);
 
    return res; 
 }
@@ -131,7 +132,7 @@ inline int pio_read_leds4(unsigned* ret)
 
 inline int pio_write_leds4(unsigned value)
 {
-     return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LED4_MASK, 0, value);
+     return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LED4_MASK, 0, value << GENERAL_OUTPUTS_LED4_SHIFT);
 }
 
 /* ARROW POSITION LEDS */
@@ -143,7 +144,7 @@ inline int pio_read_ledspos(unsigned* ret)
 
 inline int pio_write_ledspos(unsigned value)
 {
-    return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LEDPOS_MASK, 0, value);
+    return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LEDPOS_MASK, 0, value << GENERAL_OUTPUTS_LEDPOS_MASK);
 }
 
 /* ARROW POSITION BUTTONS */

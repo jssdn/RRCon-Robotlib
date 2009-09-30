@@ -4,6 +4,7 @@ v 0.4 - Xenomai
 -- gpio.c/.h: support for interrupts and safe multiple access to registers 
 	      now is a more general intermediate layer for gpio modules
 -- platform_io.c/.h  Added high-level functions to control the basic gpio_devices (leds, buttons,...)
+-- motors.c/.h Substitute openloop_motors.c/.h for the control of motors and encoders. C
 
 
 v 0.34

@@ -1,6 +1,8 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 /*   --- Debug Loglevel ---
      DBG_NONE 0     silent 
      DBG_CRIT 2     critical error for application to exit 
@@ -29,5 +31,6 @@ inline void util_pdbg(int msg, char *fmt, ...);
 #endif 
 
 void print_timestamp();
+void print_banner();
 
 #endif 
