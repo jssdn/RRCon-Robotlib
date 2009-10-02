@@ -54,15 +54,15 @@ int spi_full_transfer(xspidev* xspi, uint8_t* tx, uint8_t* rx, int len)
     };	
     
     if ((ret = ioctl(xspi->fd, SPI_IOC_MESSAGE(1), &tr)) == 1){
-	util_dbg(DBG_WARN,"Can't send spi message. Error %d", ret);
+	util_pdbg(DBG_WARN,"SPI: Can't send spi message. Error %d", ret);
 	return -EIO; 
     }
     
-    #ifdef DBG_LEVEL 5
+    #if DBG_LEVEL == 5
     for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
 	if (!(ret % 6))
-		puts("");
-	util_dbg(DBG_DEBG, "%.2X ", rx[ret]);
+		puts(""); //TODO:CHANGE!
+	util_pdbg(DBG_DEBG, "%.2X ", rx[ret]);
     }
     #endif
     
@@ -73,7 +73,7 @@ inline int spi_half_tranfer( xspidev* xspi, uint8_t* data, int len )
 {
     int status; 
     if ( ( status = write( xspi->fd, data , len ) < 0 )){
-            util_dbg(DBG_WARN, "Error writing to device %s\n",xspi->device); 
+            util_pdbg(DBG_WARN, "SPI: Error writing to device %s\n",xspi->device); 
             return -EIO;
     }
     return status; // written bytes
@@ -83,7 +83,7 @@ inline int spi_half_read( xspidev* xspi , uint8_t* data, int len )
 {
     int status; 
     if ( ( status = read( xspi->fd, data , len ) < 0 )){
-            util_dbg(DBG_WARN, "Error reading from %s\n",xspi->device); 
+            util_pdbg(DBG_WARN, "SPI: Error reading from %s\n",xspi->device); 
             return -EIO;
     }
     return status; // read bytes
@@ -161,9 +161,9 @@ int spi_set_config(xspidev* xspi)
 
 
     #if DBG_LEVEL == 5
-    util_dbg(DBG_DEBG, "spi mode: %d\n", xspi->mode);
-    util_dbg(DBG_DEBG, "bits per word: %d\n", xspi->bits);
-    util_dbg(DBG_DEBG, "max speed: %d Hz (%d KHz)\n", xspi->speed, xspi->speed/1000);
+    util_pdbg(DBG_DEBG, "SPI: mode: %d\n", xspi->mode);
+    util_pdbg(DBG_DEBG, "SPI: bits per word: %d\n", xspi->bits);
+    util_pdbg(DBG_DEBG, "SPI: max speed: %d Hz (%d KHz)\n", xspi->speed, xspi->speed/1000);
     #endif
     
     return 0;

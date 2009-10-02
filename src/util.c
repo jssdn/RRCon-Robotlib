@@ -68,3 +68,31 @@ void print_banner()
     util_pdbg(DBG_INFO, "Release notes:%s \n",ROBOTLIB_REVISION_STRING );
     util_pdbg(DBG_INFO, "------------------------------------------------------------\n");
 }
+
+void __msleep(long t)
+{
+	struct timespec ts = {
+	.tv_sec = 0,
+	.tv_nsec = t*1000000,
+	};	
+	nanosleep(&ts,NULL);
+}
+
+void __usleep(long long t)
+{
+	struct timespec ts = {
+	.tv_sec = 0,
+	.tv_nsec = t*1000,
+	};	
+	nanosleep(&ts,NULL);
+}
+
+void __nanosleep(long long t)
+{
+	struct timespec ts = {
+	.tv_sec = 0,
+	.tv_nsec = t,
+	};	
+	nanosleep(&ts,NULL);
+    
+}

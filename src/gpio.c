@@ -52,18 +52,14 @@ int gpio_write(GPIO* gpio, unsigned mask, unsigned offset, unsigned value)
     RT_MUTEX_INFO minfo; 
     //TODO: check offset?
     if( (err = rt_mutex_acquire(&(gpio->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "Couldn't acquire mutex . Error : %d \n", err);	
-	perror(NULL);
-	printf("mutex opaque %ld\n", gpio->mutex.opaque);
-	rt_mutex_inquire(&(gpio->mutex),&minfo); 
-	printf("Mutex info:\n\tlockcnt:%d\n\tnwaiters:%d\n\tName:%s\n",minfo.lockcnt, minfo.nwaiters, minfo.name);
+	util_pdbg(DBG_WARN, "GPIO: Couldn't acquire mutex . Error : %d \n", err);	
 	return err;
     }
     // check flags for input only?
     *(gpio->vadd + offset) = value & mask; 
 
     if( (err = rt_mutex_release(&(gpio->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "Couldn't release mutex . Error : %d \n", err);
+	util_pdbg(DBG_WARN, "GPIO: Couldn't release mutex . Error : %d \n", err);
 	return err; 
     }
 
@@ -97,7 +93,7 @@ int gpio_init(GPIO* gpio,
 {
     int err; 
 
-    util_pdbg(DBG_INFO, "Initializing GPIO:\n");
+    util_pdbg(DBG_INFO, "GPIO: Initializing GPIO:\n");
 
     // map
     if( (err = mapio_region(&(gpio->vadd), base_add,end_add)) < 0 )
@@ -110,28 +106,28 @@ int gpio_init(GPIO* gpio,
 
     // Mutex init
     if( (err = rt_mutex_create(&(gpio->mutex), NULL)) < 0 ){
-	    util_pdbg(DBG_WARN, "Error rt_mutex_create: %d\n", err);
+	    util_pdbg(DBG_WARN, "GPIO: Error rt_mutex_create: %d\n", err);
 	    perror(0);
 	    return err;
     } 
 
     // tri-state 
     if( (err =  gpio_write(gpio, ~0x0, GPIO_TRISTATE_OFFSET, tristate)) < 0){
-	 util_pdbg(DBG_WARN, "Error writing to GPIO in address 0x%x. Error: %d \n", gpio->vadd, err);
+	 util_pdbg(DBG_WARN, "GPIO: Error writing to GPIO in address 0x%x. Error: %d \n", gpio->vadd, err);
 	 return err; 
     }
 
      // IRQ init
     if (fisr != NULL) {
 	if( (err = rt_intr_create(&(gpio->intr_desc), "GPIO IRQ", irqno, I_NOAUTOENA)) < 0 ){
-	    util_pdbg(DBG_WARN, "Cannot create interrupt for GPIO rt_intr_create=%i\n", err);
+	    util_pdbg(DBG_WARN, "GPIO: Cannot create interrupt for GPIO rt_intr_create=%i\n", err);
 	    return err;
 	}
 	    
 	rt_intr_enable (&(gpio->intr_desc));
 
 	if( (err = rt_task_spawn(&(gpio->interrupt_task), "Int", 0, irq_prio, 0,fisr, (void*)&(gpio->intr_desc))) < 0){
-	    util_pdbg(DBG_WARN, "Cannot Spawn ISR for GPIO. err = %d\n", err);
+	    util_pdbg(DBG_WARN, "GPIO: Cannot Spawn ISR for GPIO. err = %d\n", err);
 	    return err; 
 	}		
     }
@@ -144,20 +140,20 @@ int gpio_clean(GPIO* gpio)
 {
     int err; 
     // unmap
-    util_pdbg(DBG_DEBG, "Cleaning GPIO...\n");
+    util_pdbg(DBG_DEBG, "GPIO: Cleaning GPIO...\n");
     if ( (err = unmapio_region(&(gpio->vadd), gpio->base_add, gpio->end_add)) < 0 ){
-	util_pdbg(DBG_WARN, "GPIO couldn't be unmapped at virtual= 0x%x . Error : %d \n", &(gpio->vadd), err);
+	util_pdbg(DBG_WARN, "GPIO: GPIO couldn't be unmapped at virtual= 0x%x . Error : %d \n", &(gpio->vadd), err);
 	return err; 
     }
     // delete mutex
     if( ( err = rt_mutex_delete(&(gpio->mutex)) ) < 0 ){
-	util_pdbg(DBG_WARN, "GPIO Mutex cannot be deleted \n");
+	util_pdbg(DBG_WARN, "GPIO: GPIO Mutex cannot be deleted \n");
 	return err; 
     }
     // TODO: check in another way
     if(!gpio->isr){
 	if( ( err = rt_intr_delete(&(gpio->intr_desc))) < 0 ){
-	    util_pdbg(DBG_WARN, "Cannot delete IRQ\n");
+	    util_pdbg(DBG_WARN, "GPIO: Cannot delete IRQ\n");
 	    return err; 
 	}
     }

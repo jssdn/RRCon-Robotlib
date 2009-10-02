@@ -33,4 +33,8 @@ inline void util_pdbg(int msg, char *fmt, ...);
 void print_timestamp();
 void print_banner();
 
+void __msleep(long t);
+void __usleep(long long t);
+void __nanosleep(long long t);
+
 #endif 

@@ -52,25 +52,25 @@ int motors_init_motor(MOTOR* motor,
 
     /* PWM instances */
     if( num_of_motors > 0 && num_of_motors <= MOTORS_MAX_NUM_OF_CORES){
-	util_pdbg(DBG_INFO, "Mapping motors... \n");
+	util_pdbg(DBG_INFO, "MOTORS: Mapping motors... \n");
 
 	/* Map motors */
 	if( (err = mapio_region(&(motor->madd), madd_base, madd_end)) < 0 ){
-	    util_pdbg(DBG_WARN, "Couldn't map PWM: %d\n", err);
+	    util_pdbg(DBG_WARN, "MOTORS: Couldn't map PWM: %d\n", err);
 	    goto pwm_nothing;
 	}
 	motor->madd_base = madd_base; 
 	motor->madd_end = madd_end; 
 	/* Allocate memory for each core */
 	if( (motor->pwms= malloc(sizeof(PWM)*num_of_motors) ) == NULL){	
-	    util_pdbg(DBG_WARN, "Cannot allocate memory" );
+	    util_pdbg(DBG_WARN, "MOTORS: Cannot allocate memory" );
 	    goto pwm_unmap;
 	}	
 	motor->num_of_motors = num_of_motors; 
 	/* Create RT Mutexes */
 	for( im = 0 ; im < num_of_motors ; im++ ){
-	    if( (err = rt_mutex_create(&(motor->pwms[im]->mutex), "PWM Reg Mutex")) < 0 ){
-		    util_pdbg(DBG_WARN, "Error rt_mutex_create: %d\n", err);
+	    if( (err = rt_mutex_create(&(motor->pwms[im]->mutex), 0)) < 0 ){
+		    util_pdbg(DBG_WARN, "MOTORS: Error rt_mutex_create: %d\n", err);
 		    goto pwm_clean_mutex;
 	    }
 	}
@@ -80,24 +80,24 @@ int motors_init_motor(MOTOR* motor,
 
     /* Quadrature encoders instances */
     if( num_of_encs > 0 && num_of_encs <= QENC_MAX_NUM_OF_CORES){
-	util_pdbg(DBG_INFO, "Mapping quadrature encoders... \n");
+	util_pdbg(DBG_INFO, "MOTORS: Mapping quadrature encoders... \n");
 
 	/* Map motors */
 	if( (err = mapio_region(&(motor->qadd), qadd_base, qadd_end)) < 0 ){
-	    util_pdbg(DBG_WARN, "Couldn't map QENC: %d\n", err);
+	    util_pdbg(DBG_WARN, "MOTORS: Couldn't map QENC: %d\n", err);
 	    goto qenc_nothing;
 	}
 	motor->qadd_base = qadd_base; 
 	motor->qadd_end = qadd_end; 
 	/* Allocate memory for each core */
 	if( (motor->encoders= malloc(sizeof(PWM)*num_of_motors) ) == NULL){	
-	    util_pdbg(DBG_WARN, "Cannot allocate memory" );
+	    util_pdbg(DBG_WARN, "MOTORS: Cannot allocate memory" );
 	    goto qenc_unmap;
 	}	
 	/* Create RT Mutexes */
 	for( iq = 0 ; iq < num_of_motors ; iq++ ){
 	    if( (err = rt_mutex_create(&(motor->pwms[im]->mutex), "PWM Reg Mutex")) < 0 ){
-		    util_pdbg(DBG_WARN, "Error rt_mutex_create: %d\n", err);
+		    util_pdbg(DBG_WARN, "MOTORS: Error rt_mutex_create: %d\n", err);
 		    goto qenc_clean_mutex;
 	    }
 	} 
@@ -123,11 +123,11 @@ qenc_clean_mutex:
     if( iq != 0 ) 
 	for( iq -= 1 ;iq >= 0; iq-- ) 
 	    if( rt_mutex_delete(&(motor->encoders[iq]->mutex)) < 0 )
-		    util_pdbg(DBG_WARN, "Error cleaning mutexes: %d\n", err);
+		    util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
     free(motor->encoders);
 qenc_unmap: 
     if ( (err = unmapio_region(&(motor->qadd), qadd_base, qadd_end)) < 0 ){
-	util_pdbg(DBG_WARN, "QENC couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->qadd), err);
+	util_pdbg(DBG_WARN, "MOTORS: QENC couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->qadd), err);
 	return err; 
     }
 qenc_nothing:
@@ -135,11 +135,11 @@ pwm_clean_mutex:
     if( im != 0 ) 
 	for( im -= 1 ;im >= 0; im-- ) 
 	    if( rt_mutex_delete(&(motor->pwms[im]->mutex)) < 0 )
-		    util_pdbg(DBG_WARN, "Error cleaning mutexes: %d\n", err);
+		    util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
     free(motor->pwms);
 pwm_unmap: 
     if ( (err = unmapio_region(&(motor->madd), madd_base, madd_end)) < 0 ){
-	util_pdbg(DBG_WARN, "PWM couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->madd), err);
+	util_pdbg(DBG_WARN, "MOTORS: PWM couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->madd), err);
 	return err; 
     }
 pwm_nothing: 
@@ -152,32 +152,32 @@ int motors_clean_motor(MOTOR* motor)
     int err;
     int i; 
 
-    util_pdbg(DBG_INFO, "Cleaning motor driver\n");
-    util_pdbg(DBG_DEBG, "Cleaning encoders\n");
+    util_pdbg(DBG_INFO, "MOTORS: Cleaning motor driver\n");
+    util_pdbg(DBG_DEBG, "MOTORS: Cleaning encoders\n");
 
     for( i = 0 ;i <= motor->num_of_encs; i-- ) 
 	if( (err = rt_mutex_delete(&(motor->encoders[i]->mutex))) < 0 ){
-		util_pdbg(DBG_WARN, "Error cleaning mutexes: %d\n", err);
+		util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
 		return err; 
 	}
     free(motor->encoders);
 
     if ( (err = unmapio_region(&(motor->qadd), motor->qadd_base, motor->qadd_end)) < 0 ){
-	util_pdbg(DBG_WARN, "PWM couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->qadd), err);
+	util_pdbg(DBG_WARN, "MOTORS: PWM couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->qadd), err);
 	return err; 
     }
 
-    util_pdbg(DBG_DEBG, "Cleaning pwms\n");
+    util_pdbg(DBG_DEBG, "MOTORS: Cleaning pwms\n");
 
     for( i = 0 ;i <= motor->num_of_motors; i-- ) 
 	if( (err = rt_mutex_delete(&(motor->pwms[i]->mutex))) < 0 ){
-		util_pdbg(DBG_WARN, "Error cleaning mutexes: %d\n", err);
+		util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
 		return err; 
 	}
     free(motor->pwms);
 
     if ( (err = unmapio_region(&(motor->madd), motor->madd_base, motor->madd_end)) < 0 ){
-	util_pdbg(DBG_WARN, "PWM couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->madd), err);
+	util_pdbg(DBG_WARN, "MOTORS: PWM couldn't be unmapped at virtual= %ld . Error : %d \n", &(motor->madd), err);
 	return err; 
     }
 

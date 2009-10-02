@@ -1,7 +1,7 @@
 ## ROBOTLIB MAKEFILE ## Jorge Sanchez de Nova jssdn@kth.se ##
 # NOTE: FOR CROSS COMPILING USE STH LIKE THIS: 
 # > DESTDIR="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/" make LD_LIBRARY_PATH="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/lib" XENO="~/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/" ARCH="powerpc" KSRC="~/xenomai/linux-2.6-denx/" all
-
+SHELL=/bin/bash
 ###### COMPILER CONFIGURATION ######
 CROSS_COMPILE ?= 
 ARCH ?= powerpc
@@ -17,9 +17,9 @@ AR = $(CROSS_COMPILE)ar rcs
 
 #SOURCES = src/xspidev.c src/max1231adc.c src/i2ctools.c src/i2ctools/i2cbusses.c src/srf08.c src/lis3lv02dl.c src/tcn75.c src/hmc6352.c src/busio.c src/gpio.c src/lcd_proc.c src/openloop_motors.c src/hwservos.c
 
-SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c src/motors.c
+SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c src/motors.c src/xspidev.c src/max1231adc.c
 # OBJECTS = $(SOURCES:.c=.o) # TODO:sed missing to remove src
-OBJECTS = busio.o gpio.o util.o platform_io.o motors.o
+OBJECTS = busio.o gpio.o util.o platform_io.o motors.o xspidev.o max1231adc.o
 LIBNAME = librobot.a
 DEBUG = -DDEBUGMODE
 
@@ -68,50 +68,50 @@ all:: robotlib examples
 
 ifeq ($(BUILD_TYPE),DEBUG)
 banner: 
-	@echo  
-	@echo -----------------------------------------------------------------------	
-	@echo - Debug version of libraries: extra debugging output, no optimization 
-	@echo - To create non-debug versions: append "BUILD_TYPE = RELEASE"
-	@echo -----------------------------------------------------------------------
+	@echo 
+	@echo -e '\E[37;44m'"\033[1m-----------------------------------------------------------------------\033[0m"
+	@echo -e '\E[37;39m'"-> Debug version of libraries: extra debugging output, no optimization\033[0m"
+	@echo -e '\E[37;39m'"-> To create non-debug versions: append \033[1mBUILD_TYPE = RELEASE\033[0m"
+	@echo -e '\E[37;44m'"\033[1m-----------------------------------------------------------------------\033[0m"
 	@echo  
 
 robotlib: banner $(SOURCES)
 	@echo 
-	@echo ----------------------------librobot------------------------------------
+	@echo -e '\E[37;44m'"\033[1m----------------------------librobot------------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) -DDEBUGMODE $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
-	@echo ----------------------------Lib done!-----------------------------------
+	@echo -e '\E[37;44m'"\033[1m----------------------------Lib done!-----------------------------------\033[0m"
 	@echo 
 	
-examples: lib/$(LIBNAME)
+examples: lib/$(LIBNAME)	
 	@echo 
-	@echo ----------------------------examples-----------------------------------
+	@echo -e '\E[37;44m'"\033[1m----------------------------examples-----------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) -DDEBUGMODE $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN)
-	@echo ----------------------------Examples done!-----------------------------
+	@echo -e '\E[37;44m'"\033[1m----------------------------Examples done!-----------------------------\033[0m"
 	@echo 
 	
 else
 banner: 
 	@echo  
-	@echo -----------------------------------------------------------------------
-	@echo - Release version of libraries: no debugging output.
-	@echo - To create debug versions: append "BUILD_TYPE = DEBUG"
-	@echo -----------------------------------------------------------------------
+	@echo -e '\E[37;31m'"\033[1m-----------------------------------------------------------------------\033[0m"
+	@echo -e '\E[37;31m'"- Release version of libraries: no debugging output.\033[0m"
+	@echo -e '\E[37;31m'"- To create debug versions: append \033[1mBUILD_TYPE = DEBUG\033[0m"
+	@echo -e '\E[37;31m'"\033[1m-----------------------------------------------------------------------\033[0m"
 	@echo  
 
 robotlib: banner $(SOURCES)
 	@echo 
-	@echo ----------------------------librobot------------------------------------
+	@echo -e '\E[37;31m'"\033[1m----------------------------librobot------------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
-	@echo ----------------------------Lib done!-----------------------------------
+	@echo -e '\E[37;31m'"\033[1m----------------------------Lib done!-----------------------------------\033[0m"
 	@echo 
 
 examples: lib/$(LIBNAME)
 	@echo 
-	@echo ----------------------------examples-----------------------------------
+	@echo -e '\E[37;31m'"\033[1m----------------------------examples-----------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN) 
-	@echo ----------------------------Examples done!-----------------------------
+	@echo -e '\E[37;31m'"\033[1m----------------------------Examples done!-----------------------------\033[0m"
 	@echo 
 
 endif
