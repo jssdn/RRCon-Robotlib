@@ -26,47 +26,56 @@
 *  ******************************************************************************* **/
 
 // TODO: Get them in an automated manner
-
+  
 /** GPIOs **/
 
 /* GPIO for General Outputs */
-/* Several devices are attached to the following outputs -
+/* Several devices are attached(muxed) to the following outputs -
    4 LEDs (4bit), 5 Position LEDS (5bit) and a USB_RESET_SIGNAL(1bit) */
 
 #define GENERAL_OUTPUTS_BASE        0x814a0000
 #define GENERAL_OUTPUTS_END         0x814affff
+#define GENERAL_OUTPUTS_NUM_OF_CHAN 1
 #define GENERAL_OUTPUTS_NUM_OF_GPIO 17
 
-#define GENERAL_OUTPUTS_LED4_MASK    0x0000f
-#define GENERAL_OUTPUTS_LED4_SHIFT   0
-#define GENERAL_OUTPUTS_LEDPOS_MASK  0x001f0
-#define GENERAL_OUTPUTS_LEDPOS_SHIFT 4
+#define GENERAL_OUTPUTS_LEDPOS_MASK  0x0001f
+#define GENERAL_OUTPUTS_LEDPOS_SHIFT 0
+#define GENERAL_OUTPUTS_LED4_MASK    0x001e0
+#define GENERAL_OUTPUTS_LED4_SHIFT   5
 //#define GENERAL_USB_RESET_MASK    0x00200 /* Not for use */
 
 /* GPIO for General Inputs */
 
-/* Several devices are attached to the following inputs - 
-   Directional buttons (5bit), an Accelerator interrupt line (1bit) and an ADC End Of Conversion signal (1bit) */
+/* Several devices are attached(muxed) to the following inputs - 
+   Directional buttons (5bit), Bumpers(4bits), an Accelerator interrupt line (1bit) and an ADC End Of Conversion signal (1bit) */
 
 #define GENERAL_INPUTS_BASE         0x81420000
 #define GENERAL_INPUTS_END          0x8142ffff
+#define GENERAL_INPUTS_NUM_OF_CHAN  1
 #define GENERAL_INPUTS_NUM_OF_GPIO  10
 #define GENERAL_INPUTS_PUSHBUT_MASK 0x0001f
-#define GENERAL_INPUTS_ACC_RDY_MASK 0x00020
-#define GENERAL_INPUTS_ADC_EOC_MASK 0x00040
-#define GENERAL_INPUTS_BUMPERS_BASE 0x00780
+#define GENERAL_INPUTS_PUSHBUT_SHIFT 0
+#define GENERAL_INPUTS_BUMPERS_MASK 0x001E0
+#define GENERAL_INPUTS_BUMPERS_SHIFT 5
+#define GENERAL_INPUTS_ACC_RDY_MASK 0x00200
+#define GENERAL_INPUTS_ACC_RDY_SHIFT 9
+#define GENERAL_INPUTS_ADC_EOC_MASK 0x00400
+#define GENERAL_INPUTS_ADC_EOC_SHIFT 10
+
 #define GENERAL_INPUTS_IRQ_NO 	7  
 #define GENERAL_INPUTS_IRQ_PRIO 1	  
 
 /* Output IO for LCD 16x2 */
 #define LCD16X2_BASE        0x81460000
 #define LCD16X2_END         0x8146ffff
+#define LCD16X2_NUM_OF_CHAN 1
 #define LCD16X2_NUM_OF_GPIO 7
 #define LCD16X2_LCD_MASK    0x0007f
 
 /* 8 Bit GPIO */
 #define FPGA_GPIO8_BASE        0x81480000
 #define FPGA_GPIO8_END         0x8148ffff
+#define FPGA_GPIO8_NUM_OF_CHAN 1
 #define FPGA_GPIO8_NUM_OF_GPIO 8
 #define FPGA_GPIO8_MASK	       0x00ff
 #define FPGA_GPIO8_IRQ_NO      8

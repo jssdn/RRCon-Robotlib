@@ -51,21 +51,21 @@ GPIO pio_lcd; // LCD /
 inline int pio_init_geninputs(void (*fisr)(void*))
 {
 	return gpio_init(&pio_geninputs, GENERAL_INPUTS_BASE, GENERAL_INPUTS_END, 
-			 ~0x0 , GPIO_FLAGS_INPUT, GENERAL_INPUTS_IRQ_NO, 
+			 GENERAL_INPUTS_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_IRQ_CHANNEL1, GENERAL_INPUTS_IRQ_NO, 
 			  fisr, GENERAL_INPUTS_IRQ_PRIO); 
 }
 
 inline int pio_init_genoutputs()
 {
 	return gpio_init(&pio_genoutputs, GENERAL_OUTPUTS_BASE, GENERAL_OUTPUTS_END, 
-			  0x0, GPIO_FLAGS_OUTPUT, 0, 
+			  GENERAL_INPUTS_NUM_OF_CHAN, GPIO_FLAGS_OUTPUT, 0, 
 			  0, 0 );     
 }
 
 inline int pio_init_fpgagpio(void (*fisr)(void*))
 {
 	return gpio_init(&pio_fpgagpio, FPGA_GPIO8_BASE, FPGA_GPIO8_END, 
-			 ~0x0 , GPIO_FLAGS_INPUT | GPIO_FLAGS_OUTPUT, FPGA_GPIO8_IRQ_NO, 
+			 FPGA_GPIO8_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_FLAGS_OUTPUT, FPGA_GPIO8_IRQ_NO, 
 			  fisr, FPGA_GPIO8_IRQ_PRIO);     
 }
 
@@ -124,47 +124,76 @@ uncleaned_fpga:
 /* Helpful easy-to-read high-level functions for gpio device read */
 
 /* LED BAR 4 bits */
-inline int pio_read_leds4(unsigned* ret)
-{
-    return gpio_read(&pio_genoutputs, GENERAL_OUTPUTS_LED4_MASK, 0, ret);
-}
-
-
 inline int pio_write_leds4(unsigned value)
 {
-     return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LED4_MASK, 0, value << GENERAL_OUTPUTS_LED4_SHIFT);
+     return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LED4_MASK, GENERAL_OUTPUTS_LED4_SHIFT, 0, value);
 }
 
 /* ARROW POSITION LEDS */
-inline int pio_read_ledspos(unsigned* ret)
-{
-    return gpio_read(&pio_genoutputs, GENERAL_OUTPUTS_LEDPOS_MASK, 0, ret);    
-}
-
-
+/*
+    Bits: 
+		UP
+		|
+		5
+		
+	Left-2	|1|  4-Right	
+              Center
+		3
+		|
+		Down
+*/
 inline int pio_write_ledspos(unsigned value)
 {
-    return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LEDPOS_MASK, 0, value << GENERAL_OUTPUTS_LEDPOS_MASK);
+    return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LEDPOS_MASK, GENERAL_OUTPUTS_LEDPOS_SHIFT, 0, value);
 }
 
 /* ARROW POSITION BUTTONS */
+/*
+    Bits: 
+		UP
+		|
+		5
+		
+	Left-2	|1|  4-Right	
+              Center
+		3
+		|
+		Down
+*/
 inline int pio_read_buttons(unsigned* ret)
 {
-    return gpio_read(&pio_genoutputs, GENERAL_INPUTS_PUSHBUT_MASK, 0, ret);        
+    return gpio_read(&pio_geninputs, GENERAL_INPUTS_PUSHBUT_MASK,GENERAL_INPUTS_PUSHBUT_SHIFT, 0, ret);        
+}
+
+inline int pio_read_bumpers(unsigned* ret)
+{
+    return gpio_read(&pio_geninputs, GENERAL_INPUTS_BUMPERS_MASK,GENERAL_INPUTS_BUMPERS_SHIFT, 0, ret);        
 }
 
 /* FPGA_GPIO8 */
 inline int pio_read_fpgagpio(unsigned* ret)
 {
-    return gpio_read(&pio_genoutputs, FPGA_GPIO8_MASK, 0, ret);    
+    return gpio_read(&pio_fpgagpio, FPGA_GPIO8_MASK,0, 0, ret);    
 }
 
 inline int pio_write_fpgagpio(unsigned value)
 {
-    return gpio_write(&pio_genoutputs, FPGA_GPIO8_MASK, 0, value);
+    return gpio_write(&pio_fpgagpio, FPGA_GPIO8_MASK,0, 0, value);
 }
 
 inline int pio_write_fpgagpio_tristate(unsigned value)
 {
-    return gpio_write(&pio_genoutputs, FPGA_GPIO8_MASK, GPIO_TRISTATE_OFFSET, value);
+    return gpio_write(&pio_fpgagpio, FPGA_GPIO8_MASK,0, GPIO_TRISTATE_OFFSET, value);
+}
+
+/* Unsafe access functions for muxed IOs */
+//TODO: REMOVE! Unsafe functions
+inline int pio_write_go_all(unsigned value)
+{
+    return gpio_write(&pio_genoutputs, ~0,0, 0, value);
+}
+
+inline int pio_read_gi_all(unsigned *ret)
+{
+    return gpio_read(&pio_geninputs, ~0, 0, 0, ret);
 }

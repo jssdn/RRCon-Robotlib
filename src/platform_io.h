@@ -31,13 +31,9 @@ int pio_clean_all();
 /* Helpful easy-to-read high-level functions for gpio device read */
 
 /* LED BAR 4 bits */
-inline int pio_read_leds4(unsigned* ret);
-
 inline int pio_write_leds4(unsigned value);
 
 /* ARROW POSITION LEDS */
-inline int pio_read_ledspos(unsigned* ret);
-
 inline int pio_write_ledspos(unsigned value);
 
 /* ARROW POSITION BUTTONS */
@@ -50,5 +46,11 @@ inline int pio_write_fpgagpio(unsigned value);
 inline int pio_write_fpgagpio_tristate(unsigned value);
 
 // TODO: LCD Functions 
+
+// TODO: Remove. Unsafe functions
+
+inline int pio_write_go_all(unsigned value);
+
+inline int pio_read_gi_all(unsigned *ret);
 
 #endif

@@ -52,6 +52,7 @@
 RT_TASK watchdog_ptr;
 RT_TASK main_task_ptr;
 RTIME watchdog_period_ns =  1000000000llu;
+//RTIME watchdog_period_ns =  100000000llu;
 
 int irq_counter = 0; 
 int end = 0; 
@@ -63,12 +64,14 @@ void gpio_isr(void* cookie)
 {	
     int err;
     RT_INTR* intr_desc = (RT_INTR*)cookie; 
+    printf("IRQ: IRQ spawned. Waiting...\n");
+    
     while(!end){
 	if( ( err = rt_intr_wait(intr_desc, TM_INFINITE)) > 0){
 	    if(++irq_counter == 10)
 		    end = 1; //finish!
 	}
-	printf("IRQ! - IRQ counter %d\n",irq_counter);
+	printf("IRQ: - IRQ counter %d\n",irq_counter);
 	rt_intr_enable(intr_desc);
     }
 }
@@ -77,6 +80,7 @@ void gpio_isr(void* cookie)
 void watchdog(void *cookie) {
 	int err;
 	unsigned but; 
+/*	int k = 0xf8f; */
 	int i = 0; 
 	unsigned long overrun;
 		
@@ -95,9 +99,19 @@ void watchdog(void *cookie) {
 			printf("WATCHDOG: error reading buttons\n");
 		
 		printf("WATCHDOG: - IRQ counter %d - Leds:0x%x But:0x%x\n",irq_counter,i,but);
-		pio_write_ledspos(i++);		
-/*		pio_write_leds4(i++);*/
+//    		pio_write_ledspos(i);
+/*		pio_read_ledspos(&but);		
+		printf("readback:%d\n",but);*/
+ 		pio_write_leds4(i);
+
+// 		pio_write_go_all(k<<i);
+// 		pio_write_go_all(i);
+		
 		fflush(NULL);
+		if(i == 0x1f)
+		    i = 0;
+		else
+		    i++;
 	}
 }
 
@@ -111,12 +125,17 @@ void main_task(void* cookie)
 		util_pdbg(DBG_CRIT, "GPIO devices could not be correctly initialized\n");	    
 		exit(err);
 	}
+	
+// 	for( i = 0xff80 ; i <= 0xffff ; i++ )
+// 	    pio_write_go_all(i);
+// 	
+// 	while (!end);
 }
 
 // signal-handler, to ensure clean exit on Ctrl-C
 void clean_exit(int dummy) {
 	printf("cleanup\n");
-	
+	end = 1;
 	pio_clean_all();
 	rt_task_delete(&watchdog_ptr);
 	rt_task_delete(&watchdog_ptr);
