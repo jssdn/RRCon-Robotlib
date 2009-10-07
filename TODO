@@ -2,11 +2,8 @@ TODO LIST
 ------------
 < Global > 
 
-- Migrate error handling to errno.h
-- Polish every single library
-- Add multithread support( mutexes/monitors for i2c/spi)
 - Complete motors/encoders/PID support
-- Write documentation/README
+- Write documentation/README (Doxygen?)
 - Write other higher-level functions
 - Write conversion table for gyros
 - Add monitoring threaded functions for Gyros/GP2x/Analog inputs
@@ -21,10 +18,6 @@ TODO LIST
     <lis3lv02dl.c>
         - Add GPIO ( interrupt? ) Free-fall detector
 
-    <xilin_lcd.c> 
-        - Clean the driver
-        - 4bits writing in CMD mode
-
     <srf08.c> 
         - Add change-address support
         - Add ANN support
@@ -35,9 +28,6 @@ TODO LIST
 
     <hmc6352.c> 
         - Correct TODOs
-
-    <openloop_motors.c> 
-        - Test. Odometry
 
 <OTHERS>
     <remote debugging>

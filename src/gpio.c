@@ -63,12 +63,9 @@
 int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsigned value)
 {
     int err; 
-    RT_MUTEX_INFO minfo; 
-    //TODO: check offset?
+
     if( (err = rt_mutex_acquire(&(gpio->mutex), TM_INFINITE)) < 0){  // block until mutex is released
 	util_pdbg(DBG_WARN, "GPIO: Couldn't acquire mutex . Error : %d \n", err);	
-/*	//TODO:remove!
-	printf("Mutex info:\n\tlockcnt:%d\n\tnwaiters:%d\n\tName:%s\n",minfo.lockcnt, minfo.nwaiters, minfo.name);*/
 	return err;
     }
  
@@ -245,7 +242,7 @@ int gpio_init(GPIO* gpio,
 		break;
 	}
     
-	#if DEBUG_LEVEL == 5
+	#if DBG_LEVEL == 5
 	gpio_read(gpio, ~0x0, 0, GPIO_GIE_OFFSET , &ret);
 	util_pdbg(DBG_DEBG,"GIE:0x%x\t",ret);	
 	gpio_read(gpio, ~0x0, 0, GPIO_IER_OFFSET , &ret);

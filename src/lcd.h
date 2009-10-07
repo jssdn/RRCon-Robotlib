@@ -1,6 +1,7 @@
 #ifndef __LCD_H__
 #define __LCD_H__
 
+#include "gpio.h"
 #include <native/mutex.h>
 
 #define LCD_BASE  0x81480000
@@ -18,7 +19,7 @@
 #define LCD_ADR2 (0xA8)		// b010000000 set address to zero
 #define LCD_CLR  (0x01)		// b000000001 clear display
 
-typedef struct slcd{
+typedef struct{
     GPIO gpio;
     RT_MUTEX mutex; 
 } LCD;
@@ -43,7 +44,7 @@ int lcd_send_data_4bit(LCD* lcd, char rs, char data);
  *   lcd_send_nibble: Send only a nibble( for special commands )
  */ 
 
-int send_nibble(LCD* lcd, char rs, char data);
+int lcd_send_nibble(LCD* lcd, char rs, char data);
 
 /** 
  *  High level simplifications for using the LCD
@@ -53,7 +54,7 @@ inline int lcd_on(LCD* lcd);
 
 inline int lcd_off(LCD* lcd);
 
-inline int lcd_clear(void);
+inline int lcd_clear(LCD* lcd);
 
 /* 
  *   lcd_init: Inits the lcd in 4bit mode

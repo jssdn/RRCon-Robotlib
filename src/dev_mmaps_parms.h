@@ -100,4 +100,20 @@
 //#define PID_BASE 0x75020000
 //#define PID_END  0x7502ffff
 
+/** Servos **/
+#define HWSERVOS_BASE 0x73600000
+#define HWSERVOS_END  0x7360FFFF
+#define HWSERVOS_NUM_OF 4
+
+/* Standard values */
+#define HWSERVOS_TIME_MAX_ANGLE 2000 /* 2 ms to reach the maximum aperture (typ 2-2.2ms) */
+#define HWSERVOS_TIME_MIN_ANGLE 1000 /* 1 ms to reach the minimum aperture (typ 0.8-1ms) */
+#define HWSERVOS_TIME_MID_ANGLE 1500 /* 1.5 ms to reach the minimum aperture (typ 0.8-1ms) */
+
+/* Values for servos with extended control */
+// #define HWSERVOS_TIME_MAX_ANGLE 2200 /* 2 ms to reach the maximum aperture (typ 2-2.2ms) */
+// #define HWSERVOS_TIME_MIN_ANGLE 800 /* 1 ms to reach the minimum aperture (typ 0.8-1ms) */
+// #define HWSERVOS_TIME_MID_ANGLE 1500 /* 1.5 ms to reach the minimum aperture (typ 0.8-1ms) */
+
+
 #endif 

@@ -52,15 +52,17 @@
 
 int lcd_data_latch(LCD* lcd, char rs, char data4b)
 {
-    if ( (err = gpio_write(lcd->gpio, LCD16X2_LCD_MASK, 0, 0, (rs | data4b))) < 0 )
+    int err; 
+    
+    if ( (err = gpio_write(&(lcd->gpio), LCD16X2_LCD_MASK, 0, 0, (rs | data4b))) < 0 )
 	return err;     
-    udelay(41);
-    if ( (err = gpio_write(lcd->gpio, LCD16X2_LCD_MASK, 0, 0, (0x40 | rs | data4b))) < 0 )
+    __usleep(41);
+    if ( (err = gpio_write(&(lcd->gpio), LCD16X2_LCD_MASK, 0, 0, (0x40 | rs | data4b))) < 0 )
 	return err; 
-    udelay(41);  
-    if ( (err = gpio_write(lcd->gpio, LCD16X2_LCD_MASK, 0, 0, (rs | data4b ))) < 0 )
+    __usleep(41);  
+    if ( (err = gpio_write(&(lcd->gpio), LCD16X2_LCD_MASK, 0, 0, (rs | data4b ))) < 0 )
 	return err;     
-    udelay(41);
+    __usleep(41);
     return 0;
 }
 
@@ -73,16 +75,16 @@ int lcd_send_data_4bit(LCD* lcd, char rs, char data)
     int err;
     char data4b; 
 
-    data->rs = rs? 0x20 : 0x00 ; 
+    rs = rs? 0x20 : 0x00 ; 
 
     // First nibble - MSbs
     data4b = (data >> 4); 
-    if ( (err = lcd_data_latch(lcd, rs, data4b))) < 0 )
+    if ( (err = lcd_data_latch(lcd, rs, data4b)) < 0 )
 	return err;     
     
     // Second nibble - MSbs
     data4b = data & 0x0f; 
-    if ( (err = lcd_data_latch(lcd, rs, data4b))) < 0 )
+    if ( (err = lcd_data_latch(lcd, rs, data4b)) < 0 )
 	return err;     
 
     return 0; 
@@ -92,8 +94,9 @@ int lcd_send_data_4bit(LCD* lcd, char rs, char data)
  *   lcd_send_nibble: Send only a nibble( for special commands )
  */ 
 
-int send_nibble(LCD* lcd, char rs, char data) 
+int lcd_send_nibble(LCD* lcd, char rs, char data) 
 {
+    int err; 
     char data4b; 
 
     rs = rs? 0x20 : 0x00 ; 
@@ -101,7 +104,7 @@ int send_nibble(LCD* lcd, char rs, char data)
     // First nibble - MSbs
     data4b = data & 0x0f; 
 
-    if ( (err = lcd_data_latch(lcd, rs, data4b))) < 0 )
+    if ( (err = lcd_data_latch(lcd, rs, data4b)) < 0 )
 	return err;     
 
     return 0; 
@@ -121,13 +124,13 @@ inline int lcd_off(LCD* lcd)
     return lcd_send_data_4bit(lcd, 0, LCD_OFF); 
 }
 
-inline int lcd_clear(void)
+inline int lcd_clear(LCD* lcd)
 {
   int err; 
   if(( err = lcd_send_data_4bit(lcd, 0, LCD_CLR)) < 0)
       return err; 
   
-  udelay(1640);
+  __usleep(1640);
   return 0; 
 }
 
@@ -141,11 +144,11 @@ int lcd_init(LCD* lcd)
     util_pdbg(DBG_INFO, "Initializing LCD:\n");
 
     // delay 15ms after processor reset
-    //     udelay (15000); // this is not necessary since the LCD will always init far too much time after the reset
+    //     __usleep (15000); // this is not necessary since the LCD will always init far too much time after the reset
 
-    err = gpio_init(lcd->gpio, LCD16X2_BASE, LCD16X2_END, 
-			       LCD16X2_NUM_OF_CHAN , GPIO_FLAGS_OUTPUT, 0, 
-			       NULL, 0); 
+    err = gpio_init(&(lcd->gpio), LCD16X2_BASE, LCD16X2_END, 
+			          LCD16X2_NUM_OF_CHAN , GPIO_FLAGS_OUTPUT, 0, 
+			          NULL, 0); 
     if (err < 0 ){
 	    util_pdbg(DBG_INFO, "Cannot init LCD's GPIO device. Error \n",err);
 	    return err; 	
@@ -154,39 +157,39 @@ int lcd_init(LCD* lcd)
 
     // NOTE: output Display Set 3 times with 50ms delay. This workaround might be required sometimes for initialization 
     for (i=0; i < 3; i++){
-	if(( err = send_nibble(0, LCD_SET8 >> 4)) < 0 ){
+	if(( err = lcd_send_nibble(lcd, 0, LCD_SET8 >> 4)) < 0 ){
 	    util_pdbg(DBG_INFO, "Cannot init LCD. Error \n",err);
 	    return err; 
 	}
-	udelay (50000); 
+	__usleep (50000); 
     }
 
     // now force display to 4 bit mode
-    if(( err = lcd_send_nibble(0, LCD_SET >> 4)) < 0)
+    if(( err = lcd_send_nibble(lcd, 0, LCD_SET >> 4)) < 0)
 	return err;     
-    udelay(50000);
+    __usleep(50000);
     
     // finally send out full display set command
-    if(( err = lcd_send_data_4bit(0, LCD_SET)) < 0 )
+    if(( err = lcd_send_data_4bit(lcd, 0, LCD_SET)) < 0 )
 	return err; 
     
-    udelay(50);
+    __usleep(50);
 
-    if(( err = lcd_off()) < 0)
+    if(( err = lcd_off(lcd)) < 0)
 	return err; 
     
-    if(( err = lcd_clear()) < 0)
+    if(( err = lcd_clear(lcd)) < 0)
 	return err;
     
-    if(( err = lcd_on()) < 0)
+    if(( err = lcd_on(lcd)) < 0)
 	return err; 
 
     // set display mode
-    if(( err = lcd_send_data_4bit(0, LCD_MD)) < 0)
+    if(( err = lcd_send_data_4bit(lcd, 0, LCD_MD)) < 0)
 	return err; 
     
     // set display address
-    if(( err = lcd_send_data_4bit(0, LCD_ADR)) < 0)
+    if(( err = lcd_send_data_4bit(lcd, 0, LCD_ADR)) < 0)
 	return err; 
 
     return 0; 
@@ -206,9 +209,9 @@ int lcd_print(LCD* lcd, const char *msg)
         msg++;
     }
     // we jump to the position 40
-    send_data_4bit(0, LCD_ADR2); 
+    lcd_send_data_4bit(lcd, 0, LCD_ADR2); 
     for( i = 0 ; i < 16 && *msg != 0 ; i++ ) {
-        if(( err = lcd_send_data_4bit( 1 , *msg)) < 0 )
+        if(( err = lcd_send_data_4bit(lcd, 1 , *msg)) < 0 )
 	    return err; 
         msg++;
     }
