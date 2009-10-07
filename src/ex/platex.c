@@ -145,7 +145,7 @@ void clean_exit(int dummy) {
 int main( int argc, char** argv )
 {
 	int err; 
-	util_pdbg(DBG_INFO, "Starting...\n");		
+	util_pdbg(DBG_INFO, "MAIN: Starting...\n");		
 
 	// Assure a clean exit
 	signal(SIGTERM, clean_exit);	
@@ -153,7 +153,7 @@ int main( int argc, char** argv )
 	
 	// Avoid page faults	
 	if( ( err = mlockall(MCL_CURRENT | MCL_FUTURE)) < 0 ) {
-		util_pdbg(DBG_CRIT, "Memory could not be locked. Exiting...\n");
+		util_pdbg(DBG_CRIT, "MAIN: Memory could not be locked. Exiting...\n");
 		exit(-1);
 	}
 
@@ -161,17 +161,17 @@ int main( int argc, char** argv )
 	
 
 	if( (err = rt_task_spawn(&main_task_ptr, "Main task", STACK_SIZE, STD_PRIO, 0, &main_task, NULL)) < 0){
-		util_pdbg(DBG_CRIT, "Main task could not be correctly initialized\n");
+		util_pdbg(DBG_CRIT, "MAIN: Main task could not be correctly initialized\n");
 		exit(err);
 	}
 
 	if( (err = rt_task_spawn(&watchdog_ptr, "Watchdog", STACK_SIZE, WATCHDOG_PRIO, 0, &watchdog, NULL)) < 0){
-		util_pdbg(DBG_CRIT, "Watchdog could not be correctly initialized\n");
+		util_pdbg(DBG_CRIT, "MAIN: Watchdog could not be correctly initialized\n");
 		exit(err);
 	}
 	    
 	while(end==0);
-	util_pdbg(DBG_INFO, "Finished!\n");	
+	util_pdbg(DBG_INFO, "MAIN: Finished!\n");	
 	return 0; 
 }
 

@@ -87,12 +87,12 @@ int pio_init_all(void (*isr_ginputs)(void*), void (*isr_fpga)(void*))
 uninit_fpga:    
     gpio_clean(&pio_geninputs);
     gpio_clean(&pio_genoutputs);
-    util_pdbg(DBG_WARN, "GPIO FPGA_GPIO8 could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
+    util_pdbg(DBG_WARN, "PIO: GPIO FPGA_GPIO8 could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
 uninit_go_fpga:    
     gpio_clean(&pio_geninputs);
-    util_pdbg(DBG_WARN, "GPIO \"General Outputs\" could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
+    util_pdbg(DBG_WARN, "PIO: GPIO \"General Outputs\" could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
 uninit_any:    
-    util_pdbg(DBG_WARN, "GPIO \"General Inputs\" could not be initialized. Error:%d\n", res);
+    util_pdbg(DBG_WARN, "PIO: GPIO \"General Inputs\" could not be initialized. Error:%d\n", res);
     return res;
 }
 
@@ -112,11 +112,11 @@ int pio_clean_all()
     return 0; 
     
 uncleaned_all:
-   util_pdbg(DBG_WARN, "Error cleaning \"General Inputs\" GPIO. None could be cleaned. Error:%d \n", res);
+   util_pdbg(DBG_WARN, "PIO: Error cleaning \"General Inputs\" GPIO. None could be cleaned. Error:%d \n", res);
 uncleaned_gout:
-   util_pdbg(DBG_WARN, "Error cleaning \"General Outputs\". \"General Inputs\" could be cleaned.\n ", res);
+   util_pdbg(DBG_WARN, "PIO: Error cleaning \"General Outputs\". \"General Inputs\" could be cleaned.\n ", res);
 uncleaned_fpga:
-   util_pdbg(DBG_WARN, "Error cleaning GPIOs. \"General Inputs/Outputs\" could be cleaned. \n", res);
+   util_pdbg(DBG_WARN, "PIO: Error cleaning GPIOs. \"General Inputs/Outputs\" could be cleaned. \n", res);
 
    return res; 
 }
