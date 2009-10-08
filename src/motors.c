@@ -123,8 +123,8 @@ int motors_init_motor(MOTOR* motor,
 qenc_clean_mutex: 
     if( iq != 0 ) 
 	for( iq -= 1 ;iq >= 0; iq-- ) 
-	    if( rt_mutex_delete(&(motor->encoders[iq]->mutex)) < 0 )
-		    util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
+	    UTIL_MUTEX_DELETE("MOTOR",&(motor->encoders[iq]->mutex));
+
     free(motor->encoders);
 qenc_unmap: 
     if ( (err = unmapio_region(&(motor->qadd), qadd_base, qadd_end)) < 0 ){
@@ -135,8 +135,8 @@ qenc_nothing:
 pwm_clean_mutex: 
     if( im != 0 ) 
 	for( im -= 1 ;im >= 0; im-- ) 
-	    if( rt_mutex_delete(&(motor->pwms[im]->mutex)) < 0 )
-		    util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
+	    UTIL_MUTEX_DELETE("MOTOR",&(motor->pwms[im]->mutex));
+
     free(motor->pwms);
 pwm_unmap: 
     if ( (err = unmapio_region(&(motor->madd), madd_base, madd_end)) < 0 ){
@@ -154,13 +154,11 @@ int motors_clean_motor(MOTOR* motor)
     int i; 
 
     util_pdbg(DBG_INFO, "MOTORS: Cleaning motor driver\n");
-    util_pdbg(DBG_DEBG, "MOTORS: Cleaning encoders\n");
+    util_pdbg(DBG_DEBG, "\tMOTORS: Cleaning encoders\n");
 
     for( i = 0 ;i <= motor->num_of_encs; i-- ) 
-	if( (err = rt_mutex_delete(&(motor->encoders[i]->mutex))) < 0 ){
-		util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
-		return err; 
-	}
+	UTIL_MUTEX_DELETE("MOTOR",&(motor->encoders[i]->mutex));
+
     free(motor->encoders);
 
     if ( (err = unmapio_region(&(motor->qadd), motor->qadd_base, motor->qadd_end)) < 0 ){
@@ -168,13 +166,11 @@ int motors_clean_motor(MOTOR* motor)
 	return err; 
     }
 
-    util_pdbg(DBG_DEBG, "MOTORS: Cleaning pwms\n");
+    util_pdbg(DBG_DEBG, "\tMOTORS: Cleaning pwms\n");
 
     for( i = 0 ;i <= motor->num_of_motors; i-- ) 
-	if( (err = rt_mutex_delete(&(motor->pwms[i]->mutex))) < 0 ){
-		util_pdbg(DBG_WARN, "MOTORS: Error cleaning mutexes: %d\n", err);
-		return err; 
-	}
+	UTIL_MUTEX_DELETE("MOTOR",&(motor->pwms[i]->mutex));
+
     free(motor->pwms);
 
     if ( (err = unmapio_region(&(motor->madd), motor->madd_base, motor->madd_end)) < 0 ){
@@ -196,14 +192,12 @@ int motors_pwm_set_freq_div(MOTOR* motor, unsigned motnum, int value)
     value = (value > MOTORS_MAX_FREQ_DIV) ? MOTORS_MAX_FREQ_DIV : value ;
     motnum = ( motnum > motor->num_of_motors ) ? motor->num_of_motors : motnum;
 
-    if( (err = rt_mutex_acquire(&(motor->pwms[motnum]->mutex), TM_INFINITE)) < 0)  // block until mutex is released
-	return err;
+    UTIL_MUTEX_ACQUIRE("MOTORS",&(motor->pwms[motnum]->mutex),TM_INFINITE);
 
     *(motor->madd + (motnum<<1) + 1) = value ; 
     motor->pwms[motnum]->freq_div = value; 
 
-    if( (err = rt_mutex_release(&(motor->pwms[motnum]->mutex))) < 0 )
-	return err; 
+    UTIL_MUTEX_RELEASE("MOTORS",&(motor->pwms[motnum]->mutex));
     
     return 0; 
 }
@@ -214,13 +208,11 @@ int motors_pwm_read_freq_div(MOTOR* motor, unsigned motnum, unsigned* ret)
 
     motnum = ( motnum > motor->num_of_motors ) ? motor->num_of_motors : motnum;
 
-    if( (err = rt_mutex_acquire(&(motor->pwms[motnum]->mutex), TM_INFINITE)) < 0)  // block until mutex is released
-	return err;
+    UTIL_MUTEX_ACQUIRE("MOTORS",&(motor->pwms[motnum]->mutex),TM_INFINITE);
 
     *ret =  motor->pwms[motnum]->freq_div; 
 
-    if( (err = rt_mutex_release(&(motor->pwms[motnum]->mutex))) < 0 )
-	return err; 
+    UTIL_MUTEX_RELEASE("MOTORS",&(motor->pwms[motnum]->mutex));
 
     return 0; 
 }
@@ -232,14 +224,13 @@ int motors_pwm_set_speed(MOTOR* motor, int motnum, int value)
     value = (value > MOTORS_MAX_SPEED) ? MOTORS_MAX_SPEED : value ;
     motnum = ( motnum > motor->num_of_motors ) ? motor->num_of_motors : motnum;
 
-    if( (err = rt_mutex_acquire(&(motor->pwms[motnum]->mutex), TM_INFINITE)) < 0)  // block until mutex is released
-	return err;
+    UTIL_MUTEX_ACQUIRE("MOTORS",&(motor->pwms[motnum]->mutex),TM_INFINITE);
 
     *(motor->madd + (motnum<<1)) = value ; 
     motor->pwms[motnum]->speed = value; 
 
-    if( (err = rt_mutex_release(&(motor->pwms[motnum]->mutex))) < 0 )
-	return err; 
+    UTIL_MUTEX_RELEASE("MOTORS",&(motor->pwms[motnum]->mutex));
+
     
     return 0; 
 }
@@ -250,13 +241,11 @@ int motors_pwm_read_speed(MOTOR* motor, unsigned motnum, int* ret)
 
     motnum = ( motnum > motor->num_of_motors ) ? motor->num_of_motors : motnum;
 
-    if( (err = rt_mutex_acquire(&(motor->pwms[motnum]->mutex), TM_INFINITE)) < 0)  // block until mutex is released
-	return err;
+    UTIL_MUTEX_ACQUIRE("MOTORS",&(motor->pwms[motnum]->mutex),TM_INFINITE);
     
     *ret =  motor->pwms[motnum]->speed; 
 
-    if( (err = rt_mutex_release(&(motor->pwms[motnum]->mutex))) < 0 )
-	return err; 
+    UTIL_MUTEX_RELEASE("MOTORS",&(motor->pwms[motnum]->mutex));
 
     return 0; 
 }
@@ -270,8 +259,8 @@ int motors_qenc_setzero(MOTOR* motor, unsigned qencnum )
 
     qencnum = ( qencnum > motor->num_of_encs ) ? motor->num_of_encs : qencnum;
 
-    if( (err = rt_mutex_acquire(&(motor->encoders[qencnum]->mutex), TM_INFINITE)) < 0)  // block until mutex is released
-	return err;
+    UTIL_MUTEX_ACQUIRE("MOTORS",&(motor->encoders[qencnum]->mutex),TM_INFINITE);
+
     // A glitch here will reset the counter
     *(motor->qadd + qencnum) = 1; 
     *(motor->qadd + qencnum) = 0; 
@@ -279,8 +268,7 @@ int motors_qenc_setzero(MOTOR* motor, unsigned qencnum )
     motor->encoders[qencnum]->qenc_value = 0; 
     motor->encoders[qencnum]->qenc_prev_value = 0; 
 
-    if( (err = rt_mutex_release(&(motor->encoders[qencnum]->mutex))) < 0 )
-	return err; 
+    UTIL_MUTEX_RELEASE("MOTORS",&(motor->encoders[qencnum]->mutex));
 
     return 0; 
 }
@@ -291,8 +279,7 @@ int motors_qenc_read_enc(MOTOR* motor, unsigned qencnum, int* value, int* prev_v
 
     qencnum = ( qencnum > motor->num_of_encs ) ? motor->num_of_encs : qencnum;
 
-    if( (err = rt_mutex_acquire(&(motor->encoders[qencnum]->mutex), TM_INFINITE)) < 0)  // block until mutex is released
-	return err;
+    UTIL_MUTEX_ACQUIRE("MOTORS",&(motor->encoders[qencnum]->mutex),TM_INFINITE);
 
     motor->encoders[qencnum]->qenc_prev_value = motor->encoders[qencnum]->qenc_value;
     motor->encoders[qencnum]->qenc_value = *(motor->qadd + qencnum); 
@@ -300,8 +287,7 @@ int motors_qenc_read_enc(MOTOR* motor, unsigned qencnum, int* value, int* prev_v
     *value = motor->encoders[qencnum]->qenc_value;
     *prev_value = motor->encoders[qencnum]->qenc_prev_value;
 
-    if( (err = rt_mutex_release(&(motor->encoders[qencnum]->mutex))) < 0 )
-	return err; 
+    UTIL_MUTEX_RELEASE("MOTORS",&(motor->encoders[qencnum]->mutex));
 
     return 0; 
 }

@@ -22,6 +22,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     
+    NOTE: To be completed. Add mutexes!
 *  ******************************************************************************* **/
 
 #include <stdio.h>
@@ -155,6 +156,8 @@ int lcd_init(LCD* lcd)
     }
     
 
+    UTIL_MUTEX_CREATE("LCD",&(lcd->mutex),NULL);
+    
     // NOTE: output Display Set 3 times with 50ms delay. This workaround might be required sometimes for initialization 
     for (i=0; i < 3; i++){
 	if(( err = lcd_send_nibble(lcd, 0, LCD_SET8 >> 4)) < 0 ){
@@ -192,6 +195,17 @@ int lcd_init(LCD* lcd)
     if(( err = lcd_send_data_4bit(lcd, 0, LCD_ADR)) < 0)
 	return err; 
 
+    return 0; 
+}
+
+int lcd_clean(LCD* lcd)
+{
+    int err; 
+    //Clear lcd?
+    lcd_clear(lcd);
+    
+    UTIL_MUTEX_DELETE("LCD",&(lcd->mutex));
+    
     return 0; 
 }
 

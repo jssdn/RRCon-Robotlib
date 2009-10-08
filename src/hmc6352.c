@@ -22,7 +22,6 @@
     NOTE: TO BE DONE
 *  ******************************************************************************* **/
 
-// HMC6352 magnetic compass driver 
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
@@ -31,9 +30,35 @@
 #include <unistd.h>
 #include <errno.h>
 #include <linux/types.h>
-
+// Xenomai
+#include <native/mutex.h>
+//--
 #include "hmc6352.h"
 #include "i2ctools.h"
+#include "util.h"
+
+int hmc6532_init(HMC6352* compass, I2CDEV* i2c, uint8_t address)
+{
+    int err; 
+
+    util_pdbg(DBG_INFO, "Initializing HMC6352 compass...\n");
+    
+    if( i2c == NULL || compass == NULL ){	
+	util_pdbg(DBG_WARN, "HMC6352: Cannot use non-initialized devices...\n");
+	return -EFAULT; 
+    }
+    
+    compass->i2c = i2c; 
+    compass->address = address; 
+
+    // Mutex init
+    if( (err = rt_mutex_create(&(servo->mutex), NULL)) < 0 ){
+	    util_pdbg(DBG_WARN, "HWSERVOS: Error rt_mutex_create: %d\n", err);
+	    return err;
+    } 
+
+    return 0; 
+}
 
 int hmc6532_idcheck(uint8_t address, int i2cbus)
 {

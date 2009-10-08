@@ -20,7 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: Done. Untested
+    NOTE: To be completed. Untested
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -78,6 +78,7 @@ int adc_config(xspidev* xspi, max1231_config* conf)
     };
 
     ret = ioctl(xspi->fd, SPI_IOC_MESSAGE(1), &tr);
+    
     if (ret == 1){
             util_pdbg(DBG_WARN, "MAX1231: Can't send spi message");
             return -1;
@@ -87,8 +88,8 @@ int adc_config(xspidev* xspi, max1231_config* conf)
 }
 
 /* TODO: All the following calls look the same. Optimize! */
-     uint8_t tx = 0x64; // clock 10 (internal, no #cnst), ref 01 (external,no wake-up delay) , diff 00 (unipolar/bipolar unchanged)
 
+/* TODO: Take it out from here */
 #define CMD_ALL_SINGLE_TX 0x64
 #define CMD_ALL_SINGLE_SLEEP 1000
 
@@ -102,17 +103,11 @@ int adc_ll_write8(xspidev* xspi, uint8_t tx, int sleep)
 {
     int err;
 
-    if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
-
+    UTIL_MUTEX_ACQUIRE("MAX1231",&(xspi->mutex),TM_INFINITE);
+    
     err = write( xspi->fd, &tx , 1 );
 
-    if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
-	return err; 
-    }
+    UTIL_MUTEX_RELEASE("MAX1231",&(xspi->mutex));
 
     if ( err < 0 ){
 	util_pdbg(DBG_WARN, "Error writing to device %s\n",xspi->device); 
@@ -128,95 +123,83 @@ int adc_ll_write8(xspidev* xspi, uint8_t tx, int sleep)
 /* Reads an array of 'len' bytes to 'dest_array' */
 int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len)
 {
-	int err,err2;
-	int i ; 
+    int err,err2;
+    int i ; 
 
-	if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	    util_pdbg(DBG_WARN, "MAX1231: Couldn't acquire mutex . Error : %d \n", err);	
-	    return err;
-	}
+    UTIL_MUTEX_ACQUIRE("MAX1231",&(xspi->mutex),TM_INFINITE);
 
-	err = write( xspi->fd, &convbyte , 1 );
-	
-        //Check times in a look-up table according to len 
-        if( convbyte & MAX1231_CONV_TEMP )
-            __usleep( dtable[(len>>1)] + MAX1231_DELAY_TEMP );
-        else 
-            __usleep( dtable[(len>>1)] );
+    err = write( xspi->fd, &convbyte , 1 );
+    
+    //Check times in a look-up table according to len 
+    if( convbyte & MAX1231_CONV_TEMP )
+	__usleep( dtable[(len>>1)] + MAX1231_DELAY_TEMP );
+    else 
+	__usleep( dtable[(len>>1)] );
 
 // 	usleep(200); // should be less 
-	
-	err2 = read( xspi->fd, dest_array , len );
+    
+    err2 = read( xspi->fd, dest_array , len );
 
-	if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
-	    util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
-	    return err; 
-	}
-	
-	if ( err2 < 0 || err < 0 ){
-	    util_pdbg(DBG_WARN,"MAX1231: Error reading/writing from/to device %s. Read:%d Write:%d\n",xspi->device,err2,err); 
-	    return err;
-        }
+    UTIL_MUTEX_RELEASE("MAX1231",&(xspi->mutex));
+    
+    if ( err2 < 0 || err < 0 ){
+	util_pdbg(DBG_WARN,"MAX1231: Error reading/writing from/to device %s. Read:%d Write:%d\n",xspi->device,err2,err); 
+	return err;
+    }
 
-        #if DBG_LEVEL == 5
-        for( i = 0 ; i < len ; i ++){
-            util_pdbg(DBG_DEBG, "Read[%d]: 0x%x\n", i, dest_array[i]);
-        }
-        #endif
-	
-        return 0; 
+    #if DBG_LEVEL == 5
+    for( i = 0 ; i < len ; i ++){
+	util_pdbg(DBG_DEBG, "Read[%d]: 0x%x\n", i, dest_array[i]);
+    }
+    #endif
+    
+    return 0; 
 }
 
 /* Read one two bytes measure from the ADC */
 int adc_read_one_once(xspidev* xspi, uint8_t n, int* ret)
 {
-        int err; 
-        uint8_t convbyte;
-        uint8_t dest[2];
+    int err; 
+    uint8_t convbyte;
+    uint8_t dest[2];
 
-        if( n > 16) 
-             return -1; // out of bounds
+    if( n > 16) 
+	    return -1; // out of bounds
 
-  	if( n == 16 ) //temperature 
-	    convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ | MAX1231_CONV_TEMP ; 
-  	else 
-	    convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ ;
-	
-	if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	    util_pdbg(DBG_WARN, "MAX1231: Couldn't acquire mutex . Error : %d \n", err);	
-	    return err;
-	}
-
- 	err = adc_read(xspi, convbyte, dest, 2 );
-
-	if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
-	    util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
-	    return err; 
-	}
-	
-	if ( err < 0 ){
-	    util_pdbg(DBG_WARN, "MAX1231:Error reading from device %s. Error: %d\n",xspi->device,err); 
-	    return -EIO;
-	}
+    if( n == 16 ) //temperature 
+	convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ | MAX1231_CONV_TEMP ; 
+    else 
+	convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ ;
+    
+    UTIL_MUTEX_ACQUIRE("MAX1231",&(xspi->mutex),TM_INFINITE);
+    
+    err = adc_read(xspi, convbyte, dest, 2 );
+    
+    UTIL_MUTEX_RELEASE("MAX1231",&(xspi->mutex));
+    
+    if ( err < 0 ){
+	util_pdbg(DBG_WARN, "MAX1231:Error reading from device %s. Error: %d\n",xspi->device,err); 
+	return -EIO;
+    }
 
 
-	*ret = ( (int)(dest[0] << 8 ) | (int)dest[1] ); 
-	
-        return 0;
+    *ret = ( (int)(dest[0] << 8 ) | (int)dest[1] ); 
+    
+    return 0;
 }
 
 /* Reads in Scan mode from byte 0 to N */
 int adc_read_scan_0_N(xspidev* xspi, uint8_t* dest, uint8_t n)
 {
-        int len = ((n & 0x0f) << 1) + 2; // n*2 + 2
-        uint8_t convbyte;
+    int len = ((n & 0x0f) << 1) + 2; // n*2 + 2
+    uint8_t convbyte;
 
-         if( n > 15) 
-             return -1; // out of bounds
+	if( n > 15) 
+	    return -1; // out of bounds
 
-        convbyte = 0x80 | ( (n & 0x0f)  << 3 ) | MAX1231_CONV_SCAN_00_N ;
+    convbyte = 0x80 | ( (n & 0x0f)  << 3 ) | MAX1231_CONV_SCAN_00_N ;
 
-        return adc_read(xspi, convbyte, dest, len );
+    return adc_read(xspi, convbyte, dest, len );
 }
 
 /* Simplify reading of temperature and returns value in degrees */

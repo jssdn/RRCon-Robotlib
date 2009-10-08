@@ -20,7 +20,7 @@
 #define LCD_CLR  (0x01)		// b000000001 clear display
 
 typedef struct{
-    GPIO gpio;
+    GPIO gpio; //TODO: or this should be a pointer and the allocation goes somewhere else?
     RT_MUTEX mutex; 
 } LCD;
 
@@ -61,6 +61,8 @@ inline int lcd_clear(LCD* lcd);
  */ 
 
 int lcd_init(LCD* lcd);
+int lcd_clean(LCD* lcd);
+
 
 int lcd_print(LCD* lcd, const char *msg);
 

@@ -65,19 +65,12 @@ int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsig
 {
     int err; 
 
-    if( (err = rt_mutex_acquire(&(gpio->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "GPIO: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
+    UTIL_MUTEX_ACQUIRE("GPIO",&(gpio->mutex), TM_INFINITE);
  
    // check flags for input only?
-/*     util_pdbg(DBG_DEBG, "Writing 0x%x to 0x%x vadd 0x%x off 0x%x\n",(value << shift) & mask, gpio->vadd + offset, gpio->vadd, offset);*/
     *(gpio->vadd + offset) = (value << shift) & mask; 
 
-    if( (err = rt_mutex_release(&(gpio->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "GPIO: Couldn't release mutex . Error : %d \n", err);
-	return err; 
-    }
+    UTIL_MUTEX_RELEASE("GPIO",&(gpio->mutex));
 
     return 0; 
 }
@@ -94,14 +87,14 @@ int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsig
 int gpio_read(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsigned* ret)
 {
     int err; 
+
     //TODO: check offset?
-    if( (err = rt_mutex_acquire(&(gpio->mutex), TM_INFINITE)) < 0)  // block until mutex is released
-	return err;
+
+    UTIL_MUTEX_ACQUIRE("GPIO",&(gpio->mutex), TM_INFINITE);
 
     *ret = (*(gpio->vadd + offset) & mask) >> shift; 
-/*    util_pdbg(DBG_DEBG, "Reading 0x%x from 0x%x\n",*ret, gpio->vadd + offset, gpio->vadd, offset);    */
-    if( (err = rt_mutex_release(&(gpio->mutex))) < 0 )
-	return err; 
+
+    UTIL_MUTEX_RELEASE("GPIO",&(gpio->mutex));
 
     return 0; 
 }
@@ -191,12 +184,7 @@ int gpio_init(GPIO* gpio,
     gpio->flags = flags; 
     gpio->num_of_channels = num_of_channels == 2 ? 2: 1;
 
-    // Mutex init
-    if( (err = rt_mutex_create(&(gpio->mutex), NULL)) < 0 ){
-	    util_pdbg(DBG_WARN, "GPIO: Error rt_mutex_create: %d\n", err);
-	    perror(0);
-	    return err;
-    } 
+    UTIL_MUTEX_CREATE("GPIO",&(gpio->mutex), NULL);
 
 //NOTE: This should go somewhere else
 //     // tri-state 
@@ -266,11 +254,9 @@ int gpio_clean(GPIO* gpio)
 	util_pdbg(DBG_WARN, "GPIO: GPIO couldn't be unmapped at virtual= 0x%x . Error : %d \n", &(gpio->vadd), err);
 	return err; 
     }
-    // delete mutex
-    if( ( err = rt_mutex_delete(&(gpio->mutex)) ) < 0 ){
-	util_pdbg(DBG_WARN, "GPIO: GPIO Mutex cannot be deleted \n");
-	return err; 
-    }
+
+    UTIL_MUTEX_DELETE("GPIO",&(gpio->mutex));
+
     // TODO: check in another way
     if(!gpio->isr){
 	if( ( err = rt_intr_delete(&(gpio->intr_desc))) < 0 ){

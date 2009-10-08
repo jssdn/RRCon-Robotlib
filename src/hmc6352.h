@@ -61,7 +61,8 @@
 
 typedef struct{
     I2CDEV* i2c; // Pointing to the bus where the HMC6352 is plugged
-    uint8_t address;
+    uint8_t address; // i2c address where the HMC6352 is located
+    RT_MUTEX mutex; 
 } HMC6352;
 
 int hmc6532_idcheck(uint8_t address, int i2cbus);

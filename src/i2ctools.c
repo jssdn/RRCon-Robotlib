@@ -65,17 +65,13 @@ int i2c_init(I2CDEV* i2c, uint8_t bus)
     i2c->i2cbus = bus; 
     
     if( (i2c->file = open_i2c_dev(i2c->i2cbus, i2c->filename, 0)) < 0 ){
-	util_pdbg(DBG_WARN, "I2C: File descriptor could not be allocated. Error %d\n", err);
+	util_pdbg(DBG_WARN, "I2C: File descriptor could not be allocated. Error %d\n", i2c->file);
 	return -ENODEV; 
     }
 
     util_pdbg(DBG_INFO, "Succesfully open file in %s on bus %d\n",i2c->filename,i2c->i2cbus);
 
-    // Mutex init
-    if( (err = rt_mutex_create(&(i2c->mutex), NULL)) < 0 ){
-	    util_pdbg(DBG_WARN, "I2C: Error rt_mutex_create: %d\n", err);
-	    return err;
-    } 
+    UTIL_MUTEX_CREATE("I2C",&(i2c->mutex),NULL);
    
     return 0; 
 }
@@ -85,12 +81,8 @@ int i2c_clean(I2CDEV* i2c)
     int err;
 
     util_pdbg(DBG_DEBG, "I2C: Cleaning I2C Device...\n");
-      
-    // delete mutex
-    if( ( err = rt_mutex_delete(&(i2c->mutex)) ) < 0 ){
-	util_pdbg(DBG_WARN, "I2C: Mutex cannot be deleted \n");
-	return err; 
-    }
+
+    UTIL_MUTEX_DELETE("I2C",&(i2c->mutex));
     
     if( ( err = close(i2c->file)) < 0 )
 	return err; 
@@ -108,11 +100,8 @@ int i2c_get( I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize)
 	util_pdbg(DBG_WARN , "I2C: Chip address invalid!\n");
 	return -EADDRNOTAVAIL;
     }
-    
-    if( (err = rt_mutex_acquire(&(i2c->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "I2C: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
+
+    UTIL_MUTEX_ACQUIRE("I2C",&(i2c->mutex),TM_INFINITE);
  
     set_slave_addr(i2c->file, address, 0);
    
@@ -131,11 +120,8 @@ int i2c_get( I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize)
 	    res = -1; // INVALID DATA SIZE
     }
     
-    if( (err = rt_mutex_release(&(i2c->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "I2C: Couldn't release mutex . Error : %d \n", err);
-	return err; 
-    }
-
+    UTIL_MUTEX_RELEASE("I2C",&(i2c->mutex));
+    
     if (res < 0) {
 	    fprintf(stderr, "Error: Read failed\n");
 	    return -EIO;
@@ -155,10 +141,7 @@ int i2c_set(I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize, unsigned
 	return -EADDRNOTAVAIL;
     }
 
-    if( (err = rt_mutex_acquire(&(i2c->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "I2C: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
+    UTIL_MUTEX_ACQUIRE("I2C",&(i2c->mutex),TM_INFINITE);
     
     set_slave_addr(i2c->file, address, 0);
 
@@ -174,10 +157,7 @@ int i2c_set(I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize, unsigned
 	    res = i2c_smbus_read_byte_data(file, daddress);
     }*/
     
-    if( (err = rt_mutex_release(&(i2c->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "I2C: Couldn't release mutex . Error : %d \n", err);
-	return err;     
-    }
+    UTIL_MUTEX_RELEASE("I2C",&(i2c->mutex));    
     
     if (res < 0) {
 	fprintf(stderr, "Error: Write failed\n");
@@ -194,20 +174,14 @@ int i2c_get_3comp( I2CDEV* i2c, uint8_t address, uint8_t arg1, uint8_t arg2)
 {
     int err,res;	        
 
-    if( (err = rt_mutex_acquire(&(i2c->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "I2C: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
+    UTIL_MUTEX_ACQUIRE("I2C",&(i2c->mutex),TM_INFINITE);
  
     // Write 3 arguments on the i2c bus
     i2c_set(i2c,address,arg1,'b', arg2);    
     set_slave_addr(i2c->file, address, 0);      
     res = i2c_smbus_read_byte(i2c->file);
 
-    if( (err = rt_mutex_release(&(i2c->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "I2C: Couldn't release mutex . Error : %d \n", err);
-	return err; 
-    }
+    UTIL_MUTEX_RELEASE("I2C",&(i2c->mutex));
     
     return 0;
 }
@@ -221,14 +195,13 @@ int i2cset_1comp( I2CDEV* i2c, uint8_t address, uint8_t arg1)
 	return -EADDRNOTAVAIL;
     }
 
-    if( (err = rt_mutex_acquire(&(i2c->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "I2C: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
+    UTIL_MUTEX_ACQUIRE("I2C",&(i2c->mutex),TM_INFINITE);
 
     set_slave_addr(i2c->file, address, 0);
     res = i2c_smbus_write_byte(i2c->file,arg1);
     
+    UTIL_MUTEX_RELEASE("I2C",&(i2c->mutex));
+
     if( (err = rt_mutex_release(&(i2c->mutex))) < 0 ){
 	util_pdbg(DBG_WARN, "I2C: Couldn't release mutex . Error : %d \n", err);
 	return err; 
