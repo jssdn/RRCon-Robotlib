@@ -104,6 +104,7 @@
 #define HWSERVOS_BASE 0x73600000
 #define HWSERVOS_END  0x7360FFFF
 #define HWSERVOS_NUM_OF 4
+#define HWSERVOS_MAX_NUM_OF 8
 
 /* Standard values */
 #define HWSERVOS_TIME_MAX_ANGLE 2000 /* 2 ms to reach the maximum aperture (typ 2-2.2ms) */
@@ -115,5 +116,29 @@
 // #define HWSERVOS_TIME_MIN_ANGLE 800 /* 1 ms to reach the minimum aperture (typ 0.8-1ms) */
 // #define HWSERVOS_TIME_MID_ANGLE 1500 /* 1.5 ms to reach the minimum aperture (typ 0.8-1ms) */
 
+#define HWSERVOS_EN_MASK 0x80000000 
+
+/** I2C and devices attached to I2C **/
+
+/* I2C Devices */
+#define I2C_BUS_0 "/dev/i2c-0"
+#define I2C_BUS_1 "/dev/i2c-1"
+//#define I2C_BUS_2 "/dev/i2c-2"
+
+/* Attached to I2C */
+
+//FIXED IN THE BOARD
+#define I2C_ACCELEROMETER_BUS 0
+#define I2C_ACCELEROMETER_ADDRESS 0x1d
+
+/* Variable, but one to agree where to place them  */
+#define I2C_MAGNETICCOMPASS_BUS 1
+#define I2C_MAGNETICCOMPASS_ADDRESS 0x21 
+
+#define I2C_SONAR0_BUS 0
+#define I2C_SONAR0_ADDRESS 0x70
+
+#define I2C_SONAR1_BUS 1
+#define I2C_SONAR1_ADDRESS 0x70
 
 #endif 

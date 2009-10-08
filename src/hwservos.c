@@ -20,6 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+    NOTE: Done. Untested
 *  ******************************************************************************* **/
 
 #include <stdio.h>
@@ -39,55 +40,139 @@
 #include "util.h"
 #include "hwservos.h"
 
-int hwservos_init(HWSERVOS* servo);
+int hwservos_init(HWSERVOS* servo, unsigned long base_add, unsigned long end_add, unsigned num_of)
 {
-    if( mapio_region(&hwservos_basep, HWSERVOS_BASE, HWSERVOS_END) < 0 )
-	return -1;
+    int i,err; 
 
-    return 0;
+    util_pdbg(DBG_INFO, "HWSERVOS: Initializing HWSERVOS:\n");
 
+    // map
+    if( (err = mapio_region(&(servo->vadd), base_add,end_add)) < 0 )
+        return err; 
+
+    servo->base_add = base_add;
+    servo->end_add = end_add;
+    
+    if( num_of > HWSERVOS_MAX_NUM_OF )
+	return -ECHRNG;
+
+    servo->values = malloc(sizeof(unsigned)*num_of);
+    for( i = 0; i < num_of ; i++ )
+	servo->values[i] = 0;
+    
+    // Mutex init
+    if( (err = rt_mutex_create(&(servo->mutex), NULL)) < 0 ){
+	    util_pdbg(DBG_WARN, "HWSERVOS: Error rt_mutex_create: %d\n", err);
+	    return err;
+    } 
+    //TODO: Error clean through tag cleaning
     return 0;
 }
 
-int hwservos_clean(HWSERVOS* servo);
+int hwservos_clean(HWSERVOS* servo)
 {
-    int i; 
+    int err,i;
+
+    util_pdbg(DBG_DEBG, "HWSERVOS: Cleaning HWSERVOS...\n");
     
-    for( i = 0 ; i < 4 ; i++ )
-    {
-      *(hwservos_basep + i) = 0x00 ; 
+    //Disable servos before unmapping
+    for( i = 0 ; i <= servo->num_of ; i++ )
+	hwservos_disable(servo,i);
+
+    if ( (err = unmapio_region(&(servo->vadd), servo->base_add, servo->end_add)) < 0 ){
+	util_pdbg(DBG_WARN, "HWSERVOS: couldn't be unmapped at virtual= 0x%x . Error : %d \n", &(servo->vadd), err);
+	return err; 
     }
     
-    if( unmapio_region(&hwservos_basep, HWSERVOS_BASE, HWSERVOS_END) < 0 )
-	return -1;
-
-    return 0;
+    // delete mutex
+    if( ( err = rt_mutex_delete(&(servo->mutex)) ) < 0 ){
+	util_pdbg(DBG_WARN, "HWSERVOS: Mutex cannot be deleted \n");
+	return err; 
+    }    
+    
+    return 0;    
 }
 
-int hwservos_set_pos(HWSERVOS* servo, unsigned num, unsigned value);
+int hwservos_set_pos(HWSERVOS* servo, unsigned num, unsigned value)
 {
+    int err; 
+
+    // Sanity check
+    if(value < HWSERVOS_TIME_MIN_ANGLE ) 
+	value = HWSERVOS_TIME_MIN_ANGLE ; 
+    else if (value > HWSERVOS_TIME_MAX_ANGLE ) 
+	    value = HWSERVOS_TIME_MAX_ANGLE ; 
+    
+    if( (err = rt_mutex_acquire(&(servo->mutex), TM_INFINITE)) < 0){  // block until mutex is released
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't acquire mutex . Error : %d \n", err);	
+	return err;
+    }
+ 
+    *(servo->vadd + num) = value | HWSERVOS_EN_MASK ; 
+    servo->values[num] =value;
+    
+    if( (err = rt_mutex_release(&(servo->mutex))) < 0 ){
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't release mutex . Error : %d \n", err);
+	return err; 
+    }
+
     return 0;
 }
 
 /* NOTE: Returned value IS NOT BASED IN HW feedback, but in latched values */
-int hwservos_get_pos(HWSERVOS* servo, unsigned num, unsigned* ret); 
+int hwservos_get_pos(HWSERVOS* servo, unsigned num, unsigned* ret)
 {
-    // sanity check
-    if(val < HWSERVOS_TIME_MIN_ANGLE ) val = HWSERVOS_TIME_MIN_ANGLE ; 
-    else if (val > HWSERVOS_TIME_MAX_ANGLE ) val = HWSERVOS_TIME_MAX_ANGLE ; 
-    *(hwservos_basep + s) = val | 0x80000000 ; 
-    
+    int err; 
+   
+    if( (err = rt_mutex_acquire(&(servo->mutex), TM_INFINITE)) < 0){  // block until mutex is released
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't acquire mutex . Error : %d \n", err);	
+	return err;
+    }
+ 
+    *ret = *(servo->vadd + num) & ~(HWSERVOS_EN_MASK) ; // Remove the enable mask
+
+    if( (err = rt_mutex_release(&(servo->mutex))) < 0 ){
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't release mutex . Error : %d \n", err);
+	return err; 
+    }
+
     return 0;
 }
 
-int hwservos_enable(HWSERVOS* servo, unsigned num);
-{
-    *(hwservos_basep + s) = *(hwservos_basep + s) | 0x80000000 ; 
+int hwservos_enable(HWSERVOS* servo, unsigned num)
+{    
+    int err;
+    
+    if( (err = rt_mutex_acquire(&(servo->mutex), TM_INFINITE)) < 0){  // block until mutex is released
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't acquire mutex . Error : %d \n", err);	
+	return err;
+    }
+ 
+    *(servo->vadd + num) |= HWSERVOS_EN_MASK ;
+
+    if( (err = rt_mutex_release(&(servo->mutex))) < 0 ){
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't release mutex . Error : %d \n", err);
+	return err; 
+    }
+
     return 0;
 }
 
 int hwservos_disable(HWSERVOS* servo, unsigned num)
 {
-    *(hwservos_basep + s) = *(hwservos_basep + s) & ~0x80000000 ; 
+    int err; 
+    
+    if( (err = rt_mutex_acquire(&(servo->mutex), TM_INFINITE)) < 0){  // block until mutex is released
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't acquire mutex . Error : %d \n", err);	
+	return err;
+    }
+ 
+    *(servo->vadd + num) &= ~(HWSERVOS_EN_MASK) ;
+
+    if( (err = rt_mutex_release(&(servo->mutex))) < 0 ){
+	util_pdbg(DBG_WARN, "HWSERVOS: Couldn't release mutex . Error : %d \n", err);
+	return err; 
+    }
+
     return 0;
 }

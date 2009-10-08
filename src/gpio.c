@@ -20,6 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+    NOTE: Done. Partially tested. IRQs needs improvements...
 *  ******************************************************************************* **/
 
 #include <stdio.h>
@@ -175,8 +176,9 @@ int gpio_init(GPIO* gpio,
 	      int irq_prio)
 {
     int err; 
+    #if DBG_LEVEL == 5
     unsigned ret;
-
+    #endif
     util_pdbg(DBG_INFO, "GPIO: Initializing GPIO:\n");
 
     // map
@@ -273,7 +275,6 @@ int gpio_clean(GPIO* gpio)
     if(!gpio->isr){
 	if( ( err = rt_intr_delete(&(gpio->intr_desc))) < 0 ){
 	    util_pdbg(DBG_WARN, "GPIO: Cannot delete IRQ\n");
-	    perror(NULL);
 	    return err; 
 	}
     }

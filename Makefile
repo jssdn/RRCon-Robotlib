@@ -8,7 +8,8 @@ SHELL=/bin/bash
 CROSS_COMPILE ?= 
 ARCH ?= powerpc
 BUILD_TYPE := DEBUG
-
+KSRC ?= /usr/share/linux
+ELDK ?= /opt/ELDK/4.2/ppc_4xx
 CFLAGSDEB = -g -Wall 
 CFLAGSREL = -Wall -O3 -mcpu=405
 
@@ -19,9 +20,9 @@ AR = $(CROSS_COMPILE)ar rcs
 
 #SOURCES = src/xspidev.c src/max1231adc.c src/i2ctools.c src/i2ctools/i2cbusses.c src/srf08.c src/lis3lv02dl.c src/tcn75.c src/hmc6352.c src/busio.c src/gpio.c src/lcd_proc.c src/openloop_motors.c src/hwservos.c
 
-SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c src/motors.c src/xspidev.c src/max1231adc.c src/lcd.c
+SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c src/motors.c src/xspidev.c src/max1231adc.c src/lcd.c src/hwservos.c src/i2ctools/i2cbusses.c src/i2ctools.c
 # OBJECTS = $(SOURCES:.c=.o) # TODO:sed missing to remove src
-OBJECTS = busio.o gpio.o util.o platform_io.o motors.o xspidev.o max1231adc.o lcd.o
+OBJECTS = busio.o gpio.o util.o platform_io.o motors.o xspidev.o max1231adc.o lcd.o hwservos.o i2cbusses.o i2ctools.o
 LIBNAME = librobot.a
 DEBUG = -DDEBUGMODE
 
@@ -29,8 +30,9 @@ EXSOURCES = src/ex/platex.c
 #EXSOURCES = xenomai_examples/control.c
 EXOBJECTS = $(EXSOURCES:.c=.o)
 EXBIN = bin/platex
-INCLUDES = -Isrc/ -Isrc/i2ctools/
-LDBIN = -Llib/ -lrobot
+INCLUDES = -Isrc/ -Isrc/i2ctools/ -Iinclude/
+#-I$(KSRC)/include/ -I$(ELDK)/usr/include/
+LDBIN = -Llib/ -lrobot -L$(ELDK)/usr/lib -L$(ELDK)/lib
 CFLAGSBIN = -g -Wall 
 
 MODESEL_SOURCES = src/ex/mode_selection.c
@@ -79,10 +81,10 @@ banner:
 
 robotlib: banner $(SOURCES)
 	@echo 
-	@echo -e '\E[37;44m'"\033[1m----------------------------librobot------------------------------------\033[0m"
+	@echo -e '\E[37;44m'"\033[1m----------------------------librobot-----------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) -DDEBUGMODE $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
-	@echo -e '\E[37;44m'"\033[1m----------------------------Lib done!-----------------------------------\033[0m"
+	@echo -e '\E[37;44m'"\033[1m----------------------------Lib done!----------------------------------\033[0m"
 	@echo 
 	
 examples: lib/$(LIBNAME)	
@@ -103,10 +105,10 @@ banner:
 
 robotlib: banner $(SOURCES)
 	@echo 
-	@echo -e '\E[37;31m'"\033[1m----------------------------librobot------------------------------------\033[0m"
+	@echo -e '\E[37;31m'"\033[1m----------------------------librobot-----------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
-	@echo -e '\E[37;31m'"\033[1m----------------------------Lib done!-----------------------------------\033[0m"
+	@echo -e '\E[37;31m'"\033[1m----------------------------Lib done!----------------------------------\033[0m"
 	@echo 
 
 examples: lib/$(LIBNAME)
@@ -120,7 +122,7 @@ endif
 
 clean::
 	$(RM) lib/*
-	$(RM) src/*.o
+	$(RM) *.o
 	$(RM) bin/*
 
 # mode_selection: 

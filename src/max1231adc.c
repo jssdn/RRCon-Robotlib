@@ -20,6 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+    NOTE: Done. Untested
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -36,8 +37,6 @@
 #include "max1231adc.h"
 #include "xspidev.h"
 #include "util.h"
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 //TODO: Change timming!
 // Look-up table for delay times for Clock 01. Have slightly more than 10% of safe margin and rounded up (in us)
@@ -87,114 +86,49 @@ int adc_config(xspidev* xspi, max1231_config* conf)
     return 0;
 }
 
-/* Config all inputs in unipolar single-ended mode */
-int adc_config_all_uni_single(xspidev* xspi)
-{
-     int err;
-
+/* TODO: All the following calls look the same. Optimize! */
      uint8_t tx = 0x64; // clock 10 (internal, no #cnst), ref 01 (external,no wake-up delay) , diff 00 (unipolar/bipolar unchanged)
 
-    if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
+#define CMD_ALL_SINGLE_TX 0x64
+#define CMD_ALL_SINGLE_SLEEP 1000
 
-    if ( ( err = write( xspi->fd, &tx , 1 ) < 0 )){
-            printf("Error writing to device %s\n",xspi->device); 
-            return -EIO;
-    }
+#define CMD_ALL_DIFF_TX 0x64
+#define CMD_ALL_DIFF_SLEEP 1000
 
-    if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
-	return err; 
-    }
+#define MAX1231_RESET_ALL_SLEEP 100
 
-    //TODO: Calculate properly
-    __usleep(1000);
-
-    return 0;
-}
-
-/* Config a pair('first', second)  in differential mode */
-int adc_config_diff(xspidev* xspi, uint8_t first) 
+/* Low level write for 8bits to support genral commands*/
+int adc_ll_write8(xspidev* xspi, uint8_t tx, int sleep) 
 {
     int err;
-    uint8_t tx = 0x64; // clock 10 (internal, no #cnst), ref 01 (external,no wake-up delay) , diff 00 (unipolar/bipolar unchanged)
-    
+
     if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
 	util_pdbg(DBG_WARN, "MAX1231: Couldn't acquire mutex . Error : %d \n", err);	
 	return err;
     }
-    
-    if( ( err = write( xspi->fd, &tx , 1 ) < 0 )){
-            util_pdbg(DBG_WARN, "MAX1231: Error writing to device %s\n",xspi->device); 
-            return -EIO;
-    }
-    
+
+    err = write( xspi->fd, &tx , 1 );
+
     if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
 	util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
 	return err; 
     }
-    
+
+    if ( err < 0 ){
+	util_pdbg(DBG_WARN, "Error writing to device %s\n",xspi->device); 
+	return -EIO;
+    }
+
     //TODO: Calculate properly
-    __usleep(1000);
+    __usleep(sleep);
 
-    return 0;
-}
-
-/* Reset device and FIFO */
-int adc_reset(xspidev* xspi)
-{
-    int err; 
-    uint8_t rst = MAX1231_RESET_ALL; 
-
-    if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
-
-    if ( ( err = write( xspi->fd, &rst , 1 ) < 0 )){
-        util_pdbg(DBG_WARN, "MAX1231: Error writing to device %s\n",xspi->device); 
-        return err;
-    }
-
-    if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
-	return err; 
-    }
-    
-    //TODO: Calculate properly   
-    __usleep(100); // TODO: needed?
-    return 0;
-}
-
-/* Reset FIFO */
-int adc_reset_fifo(xspidev* xspi)
-{
-    int err; 
-    uint8_t rst = MAX1231_RESET_FIFO;
-
-    if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't acquire mutex . Error : %d \n", err);	
-	return err;
-    }
-
-    if ( ( err = write( xspi->fd, &rst , 1 ) < 0 )){
-	util_pdbg(DBG_WARN, "MAX1231: Error writing to device %s\n",xspi->device); 
-        return err;
-    }
-
-    if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
-	util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
-	return err; 
-    }
-    return 0;
+    return 0;    
 }
 
 /* Reads an array of 'len' bytes to 'dest_array' */
 int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len)
 {
-	int err;
+	int err,err2;
 	int i ; 
 
 	if( (err = rt_mutex_acquire(&(xspi->mutex), TM_INFINITE)) < 0){  // block until mutex is released
@@ -202,10 +136,7 @@ int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len)
 	    return err;
 	}
 
-	if ( ( err = write( xspi->fd, &convbyte , 1 ) < 0 )){
-                printf("Error writing to device %s\n",xspi->device); 
-                return err;
-        }
+	err = write( xspi->fd, &convbyte , 1 );
 	
         //Check times in a look-up table according to len 
         if( convbyte & MAX1231_CONV_TEMP )
@@ -215,15 +146,17 @@ int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len)
 
 // 	usleep(200); // should be less 
 	
-	if ( ( err = read( xspi->fd, dest_array , len ) < 0 )) {
-            util_pdbg(DBG_WARN, "MAX1231: Error reading from device %s\n",xspi->device);
-            return err;
-        }
+	err2 = read( xspi->fd, dest_array , len );
 
 	if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
 	    util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
 	    return err; 
 	}
+	
+	if ( err2 < 0 || err < 0 ){
+	    util_pdbg(DBG_WARN,"MAX1231: Error reading/writing from/to device %s. Read:%d Write:%d\n",xspi->device,err2,err); 
+	    return err;
+        }
 
         #if DBG_LEVEL == 5
         for( i = 0 ; i < len ; i ++){
@@ -245,7 +178,7 @@ int adc_read_one_once(xspidev* xspi, uint8_t n, int* ret)
              return -1; // out of bounds
 
   	if( n == 16 ) //temperature 
-  	     convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ | MAX1231_CONV_TEMP ; 
+	    convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ | MAX1231_CONV_TEMP ; 
   	else 
 	    convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ ;
 	
@@ -254,15 +187,18 @@ int adc_read_one_once(xspidev* xspi, uint8_t n, int* ret)
 	    return err;
 	}
 
- 	if( (err = adc_read(xspi, convbyte, dest, 2 )) < 0 ) {
-	   util_pdbg(DBG_WARN, "MAX1231: Couldn't read from device. Error : %d \n", err);	
- 	   return err; 
-	}
-	
+ 	err = adc_read(xspi, convbyte, dest, 2 );
+
 	if( (err = rt_mutex_release(&(xspi->mutex))) < 0 ){
 	    util_pdbg(DBG_WARN, "MAX1231: Couldn't release mutex . Error : %d \n", err);
 	    return err; 
 	}
+	
+	if ( err < 0 ){
+	    util_pdbg(DBG_WARN, "MAX1231:Error reading from device %s. Error: %d\n",xspi->device,err); 
+	    return -EIO;
+	}
+
 
 	*ret = ( (int)(dest[0] << 8 ) | (int)dest[1] ); 
 	
@@ -284,6 +220,7 @@ int adc_read_scan_0_N(xspidev* xspi, uint8_t* dest, uint8_t n)
 }
 
 /* Simplify reading of temperature and returns value in degrees */
+// Needs to divide by 8 afterwards
 int adc_get_temperature(xspidev* xspi, int* ret)
 {
     int err;
@@ -293,6 +230,6 @@ int adc_get_temperature(xspidev* xspi, int* ret)
 	return err;
     }
     
-    *ret = *ret >> 3; // div by 8    
+    *ret = *ret;
     return 0;
 }
