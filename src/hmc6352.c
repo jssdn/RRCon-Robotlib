@@ -19,7 +19,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: TO BE DONE
+    NOTE: DONE
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -51,61 +51,84 @@ int hmc6532_init(HMC6352* compass, I2CDEV* i2c, uint8_t address)
     compass->i2c = i2c; 
     compass->address = address; 
 
-    // Mutex init
-    if( (err = rt_mutex_create(&(servo->mutex), NULL)) < 0 ){
-	    util_pdbg(DBG_WARN, "HWSERVOS: Error rt_mutex_create: %d\n", err);
-	    return err;
-    } 
+    UTIL_MUTEX_CREATE("HMC6352",&(compass->mutex), NULL);
 
     return 0; 
 }
 
-int hmc6532_idcheck(uint8_t address, int i2cbus)
+int hmc6532_clean(HMC6352* compass)
 {
-    int res; 
-    if( (res = i2cget_3com(address, 
-                           HMC6352_CMD_READ_EEPROM,
-                           HMC6352_EE_REG_ADDRESS,
-                           i2cbus)) < 0 )
-        return res; 
+    int err; 
 
-    return  (uint8_t)res == HMC6352_ID? 0 : -ENODEV ; 
+    util_pdbg(DBG_INFO, "Cleaning HMC6352 compass...\n");
+    
+    compass->i2c = NULL;
+    compass->address = 0x00; 
+    
+    UTIL_MUTEX_DELETE("HMC6352", &(compass->mutex));
+    
+    return 0; 
 }
 
-int hmc6532_init_standby(uint8_t address, int i2cbus)
+int hmc6532_idcheck(HMC6352* compass)
 {
-    int res; 
-    if( (res = hmc6532_idcheck(address,i2cbus)) < 0 )
-        return res; 
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);
+    
+    err = i2c_get_3com(compass->i2c, compass->address, HMC6352_CMD_READ_EEPROM,HMC6352_EE_REG_ADDRESS);
+    
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    if(err < 0) 
+	return err; 
+    
+    return  (uint8_t)err == HMC6352_ID? 0 : -ENODEV ; 
+}
 
-    return i2cset(address,
-                 HMC6352_CMD_WRITE_RAM,
-                 (HMC6352_RAM_REG_OPMODE << 8) | HMC6352_REG_OPMODE_OP_STANDBY,
-                 i2cbus, 
-                 'w' );
+int hmc6532_init_standby(HMC6352* compass)
+{
+    int err; 
+    
+    if( (err = hmc6532_idcheck(compass)) < 0 )
+        return err; 
+
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);
+    
+    err = i2c_set(compass->i2c,compass->address,HMC6352_CMD_WRITE_RAM,
+		 'w', (HMC6352_RAM_REG_OPMODE << 8) | HMC6352_REG_OPMODE_OP_STANDBY);
+		 
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    return err; 
 }
 
 
-int hmc6532_init_query(uint8_t address, int i2cbus)
+int hmc6532_init_query(HMC6352* compass)
 {
-    int res; 
-    if( (res = hmc6532_idcheck(address,i2cbus)) < 0 )
-        return res; 
+    int err; 
+    
+    if( (err = hmc6532_idcheck(compass)) < 0 )
+        return err; 
 
-    return i2cset(address, 
-                  HMC6352_CMD_WRITE_RAM,
-                  (HMC6352_RAM_REG_OPMODE << 8) | HMC6352_REG_OPMODE_OP_QUERY,
-                  i2cbus, 
-                  'w' );
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);
+    
+    err = i2c_set(compass->i2c, compass->address,HMC6352_CMD_WRITE_RAM,
+                  'w', (HMC6352_RAM_REG_OPMODE << 8) | HMC6352_REG_OPMODE_OP_QUERY);
+		  
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    return err; 
 }
 
-int hmc6532_init_continous(uint8_t address, int i2cbus,uint8_t freq)
+int hmc6532_init_continous(HMC6352* compass, uint8_t freq)
 {
-    int res;
+    int err;
     uint16_t com; 
 
-    if( (res = hmc6532_idcheck(address,i2cbus)) < 0 )
-        return res; 
+    if( (err = hmc6532_idcheck(compass)) < 0 )
+        return err; 
+    
     com = (HMC6352_RAM_REG_OPMODE << 8) | HMC6352_REG_OPMODE_OP_CONTINOUS; 
 
     switch(freq)
@@ -127,63 +150,107 @@ int hmc6532_init_continous(uint8_t address, int i2cbus,uint8_t freq)
             break; 
     }
 
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);
+
     // TODO: SET FREQ
-    return i2cset(address, 
-                  HMC6352_CMD_WRITE_RAM,
-//                  (HMC6352_RAM_REG_OPMODE << 8) | HMC6352_REG_OPMODE_FREQ_10HZ | HMC6352_REG_OPMODE_OP_CONTINOUS,
-                  com,
-                  i2cbus, 
-                  'w' );
+    err = i2c_set(compass->i2c,compass->address,HMC6352_CMD_WRITE_RAM,
+		   'w' ,com);
+//                  (HMC6352_RAM_REG_OPMODE << 8) | HMC6352_REG_OPMODE_FREQ_10HZ | HMC6352_REG_OPMODE_OP_CONTINOUS);
+
+		  
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    return err; 
 }
 
 // TODO: READ functions are not well made for the operating modes
 // standby -> should send two reads
 // query -> one read,gets the previos
 // continous -> does need the 'A' command
-int hmc6532_read_nowait(uint8_t address, int i2cbus, uint16_t* degrees)
+int hmc6532_read_nowait(HMC6352* compass, uint16_t* degrees)
 {
-    int res; 
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);
+    
+    err =  i2c_get(compass->i2c, compass->address, HMC6352_CMD_GETDATA, 'w'); 
+    
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
 
-    if (( res =  i2cget(address, HMC6352_CMD_GETDATA, i2cbus, 'w')) < 0 ) 
-        return res; 
-
-    res &= 0xffff; 
-    *degrees = ( res << 8 ) | ( res >> 8 );
+    if( err < 0 )
+	return err; 
+    
+    err &= 0xffff; 
+    *degrees = ( err << 8 ) | ( err >> 8 );
+    
     return 0; 
 }
 
-inline int hmc6532_read_wait(uint8_t address, int i2cbus, uint16_t* degrees)
+inline int hmc6532_read_wait(HMC6352* compass, uint16_t* degrees)
 {
      __usleep(6000); // we need to wait at least this 
-     return hmc6532_read_nowait(address, i2cbus, degrees); 
+     return hmc6532_read_nowait(compass, degrees); 
 }
 
-inline int hmc6532_enter_calibration(uint8_t address, int i2cbus)
+int hmc6532_enter_calibration(HMC6352* compass)
 {
-    return i2cset_1com( address, HMC6352_CMD_ENTER_CALIB, i2cbus);
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);   
+    
+    err = i2c_set_1com( compass->i2c, compass->address, HMC6352_CMD_ENTER_CALIB);
+    
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    return err; 
 }
 
-inline int hmc6532_exit_calibration(uint8_t address, int i2cbus)
+int hmc6532_exit_calibration(HMC6352* compass)
 {
-    int res; 
-    if((res =  i2cset_1com( address, HMC6352_CMD_EXIT_CALIB, i2cbus) ) < 0 ) 
-        return res;
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);   
+    
+    err =  i2c_set_1com( compass->i2c, compass->address, HMC6352_CMD_EXIT_CALIB);        
+    
     __usleep(14000); // Minimum delay needed
+    
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    if(err < 0 ) 
+	return err; 
+    
     return 0;
 }
 
-inline int hmc6532_sleep(uint8_t address, int i2cbus)
+int hmc6532_sleep(HMC6352* compass)
 {
-    return i2cset_1com( address, HMC6352_CMD_SLEEP, i2cbus);
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);   
+    
+    err = i2c_set_1com( compass->i2c, compass->address, HMC6352_CMD_SLEEP);
+    
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    return err; 
 }
 
-inline int hmc6532_wakeup(uint8_t address, int i2cbus)
+int hmc6532_wakeup(HMC6352* compass)
 {
-    int res;
-    if((res =  i2cset_1com( address, HMC6352_CMD_WAKEUP, i2cbus) ) < 0 ) 
-        return res;
-
+    int err;
+    
+    UTIL_MUTEX_ACQUIRE("HMC6352",&(compass->mutex),TM_INFINITE);   
+    
+    err =  i2c_set_1com( compass->i2c, compass->address, HMC6352_CMD_WAKEUP); 
+    
     __usleep(100); // minimum delay needed 
+    
+    UTIL_MUTEX_RELEASE("HMC6352",&(compass->mutex));
+    
+    if ( err < 0 ) 
+	return err; 
+    
     return 0;
 }
 

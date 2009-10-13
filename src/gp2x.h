@@ -15,12 +15,9 @@
 
 // Not singular values from 0 until X
 #define GP2D120_NON_SINGULAR_UNTIL 2
-
-// TODO: This could be improved with a precision experimentation lookup-table from Volts-Distance
-// The following table is based on the specificacions provided from the manufacturer
-// Distance vs deciVolts
-
-static int gp2d120_lut[][] = {  { 0 , 0  }, 
+#define GP2D120_LUT_X 2
+#define GP2D120_LUT_Y 42
+static int gp2d120_lut[GP2D120_LUT_Y][GP2D120_LUT_X] = {  { 0 , 0  }, 
                                 { 1 , 19 },
                                 { 2 , 22 },
                                 { 3 , 30 },

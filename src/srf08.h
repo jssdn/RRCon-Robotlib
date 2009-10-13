@@ -91,32 +91,32 @@
 #define SRF08_VAL_MAX_ADDRESS  0x7F /* Max i2c address which the SRF08 can have */
 #define SRF08_VAL_MIN_ADRESS   0x70 /* Min i2c address which the SRF08 can have */
 
-//functions 
 
-#define srf08_fire_inch( address, i2cbus) \
-    i2cset(address, SRF08_REG_CMD,SRF08_CMD_RG_RESINCH, i2cbus, 'b' )
-
-#define srf08_fire_cm( address, i2cbus) \
-    i2cset(address, SRF08_REG_CMD,SRF08_CMD_RG_RESCM, i2cbus, 'b' )
-
-#define srf08_fire_usec( address, i2cbus) \
-    i2cset(address, SRF08_REG_CMD,SRF08_CMD_RG_RESUSEC, i2cbus, 'b' )
-
-#define srf08_get_fw( address, i2cbus) \
-    i2cget(address, SRF08_REG_CMD, i2cbus, 'b' )
-
-#define srf08_get_light( address, i2cbus) \
-    i2cget(address, SRF08_REG_LIGHT, i2cbus, 'b' )
+#include <native/mutex.h>
+#include "util.h"
 
 #define srf08_sleep_max() \
-        usleep(65000)
+        __usleep(65000)
 
-int srf08_get_echo(uint8_t address, int i2cbus, uint8_t n);
+typedef struct{
+    I2CDEV* i2c; /* I2C device where the sensor is attached */
+    uint8_t address; /* I2C bus address */
+    RT_MUTEX mutex;  /* Mutex */
+//     int16_t readings[17];    
+} SRF08; 
+    
+int srf08_init(SRF08* sonar,I2CDEV* i2c, uint8_t address);
 
-//TODO: 
-//-> CHANGE GAIN
-//-> CALCULATE MAX DELAY ( GAIN )
-//-> CHANGE ADDRESS 
-//-> ANN MODE 
+int srf08_clean(SRF08* sonar);
+
+int srf08_get_echo(SRF08* sonar, uint8_t n);
+
+int srf08_get_light(SRF08* sonar);
+
+inline int srf08_fire_inch(SRF08* sonar);
+
+inline int srf08_fire_cm(SRF08* sonar);
+
+inline int srf08_fire_usec(SRF08* sonar);
 
 #endif 

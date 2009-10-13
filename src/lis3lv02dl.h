@@ -2,7 +2,6 @@
 #define __LIS3LV02DL_H__
 
 // registers
-
 #define LIS3_REG_WHOAMI 0x0f /* Should return 0x3a */
 
 #define LIS3_REG_OFFSETX 0x16 /* Digital offset trimming of X-Axis */
@@ -114,10 +113,17 @@
 
 #define SCALE_FACTOR_6G_12bit 341.3
 #define SCALE_FACTOR_2G_12bit 2048
-
 //---------------------------------------------------------------------------------------------------------------------
 
-struct lis3struct{
+#include <native/mutex.h> 
+#include "i2ctools.h"
+
+typedef struct{
+    //Driver
+    I2CDEV* i2c; 
+    uint8_t address;
+    RT_MUTEX mutex;
+    //Data
     int16_t xacc; 
     int16_t yacc;
     int16_t zacc;
@@ -127,14 +133,20 @@ struct lis3struct{
     int16_t zcal;
     
     char data_overrun;
-};
+} LIS3LV02DL;
 
-typedef struct lis3struct lis3s; 
+int lis3lv02dl_init(LIS3LV02DL* acc, I2CDEV* i2c, uint8_t address);
 
-int lis3lv02dl_id_check(uint8_t address,int i2cbus);
-int lis3lv02dl_poweroff(uint8_t address, int i2cbus);
-int lis3lv02dl_read(uint8_t address, int i2cbus, lis3s* lis3data);
-int lis3lv02dl_calib(uint8_t address, int i2cbus, lis3s* lis3data);
-int lis3lv02dl_init_3axis(uint8_t address, int i2cbus);
+int lis3lv02dl_clean(LIS3LV02DL* acc);
+
+int lis3lv02dl_id_check(LIS3LV02DL* acc);
+
+int lis3lv02dl_poweroff(LIS3LV02DL* acc);
+
+int lis3lv02dl_read(LIS3LV02DL* acc);
+
+int lis3lv02dl_calib(LIS3LV02DL* acc);
+
+int lis3lv02dl_init_3axis(LIS3LV02DL* acc);
 
 #endif

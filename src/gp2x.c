@@ -32,21 +32,24 @@
 #include "max1231adc.h"
 #include "gp2x.h"
 
-// TODO: not very optimal search algorithm, but the LUT is small. 
+// TODO: This could be improved with a precision experimentation lookup-table from Volts-Distance
+// The following table is based on the specificacions provided from the manufacturer
+// Distance vs deciVolts
 
+// TODO: not very optimal search algorithm, but the LUT is small. 
 int gp2dx_d120_v2cm(int dvolts)
 {
     int i; 
     int tmp = 0;
 
     // Starts from the end to avoid going into the non-singular parts of the funcition
-    for ( i = sizeof(gpd120_lut[][0]) ; i > 0 ; i-- ) 
+    for ( i = GP2D120_LUT_Y ; i > 0 ; i-- ) 
     {
-        tmp = gpd120_lut[i][1]; 
+        tmp = gp2d120_lut[i][1]; 
         if ( tmp >= dvolts){
             break; 
         }
     }
 
-    return gpd120_lut[i][0] ; 
+    return gp2d120_lut[i][0] ; 
 }

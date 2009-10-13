@@ -21,7 +21,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: to be done. Untested
+    NOTE: Done. Untested
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -35,43 +35,113 @@
 
 #include "srf08.h"
 #include "i2ctools.h"
+#include "util.h"
 
-int srf08_get_echo(uint8_t address, int i2cbus, uint8_t n)
+int srf08_init(SRF08* sonar,I2CDEV* i2c, uint8_t address)
 {
+    int err; 
+
+    util_pdbg(DBG_INFO, "Initializing SRF08 sonar...\n");
+    
+    if( i2c == NULL || sonar == NULL ){	
+	util_pdbg(DBG_WARN, "SRF08: Cannot use non-initialized devices...\n");
+	return -EFAULT; 
+    }
+    
+    sonar->i2c = i2c; 
+    sonar->address = address; 
+
+    UTIL_MUTEX_CREATE("SRF08",&(sonar->mutex), NULL);
+
+    return 0;     
+}
+
+int srf08_clean(SRF08* sonar)
+{
+    int err; 
+
+    util_pdbg(DBG_INFO, "Cleaning the SRF08 accelerometer...\n");
+    
+    sonar->i2c = NULL;
+    sonar->address = 0x00;    
+    
+    UTIL_MUTEX_DELETE("SRF08", &(sonar->mutex));
+    
+    return err;     
+}
+
+int srf08_get_echo(SRF08* sonar, uint8_t n)
+{
+    int err; 
     uint8_t offset; 
 
     if( n >= 17 )
         return -EINVAL;
 
     offset = ( n << 1 ) + SRF08_REG_1STECHO_HIGH ; // First echo starts at 0x02 starts
-
-    return ((int)i2cget(address, offset, i2cbus, 'b' ) << 8 ) | ((int) i2cget(address, offset + 1, i2cbus, 'b' )) ;
+    
+    UTIL_MUTEX_ACQUIRE("SRF08",&(sonar->mutex),TM_INFINITE);
+    
+    //Get 16 bits TODO: why not just get word!?    
+    err = ((int) i2c_get(sonar->i2c, sonar->address, offset, 'b' ) << 8 ) | ((int) i2c_get(sonar->i2c, sonar->address, offset + 1, 'b' )) ;
+    
+    UTIL_MUTEX_RELEASE("SRF08",&(sonar->mutex));
+    
+    return err; 
 }
+
+int srf08_get_light(SRF08* sonar) 
+{
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("SRF08",&(sonar->mutex),TM_INFINITE);
+
+    err = i2c_get(sonar->i2c, sonar->address, SRF08_REG_LIGHT, 'b' );
+    
+    UTIL_MUTEX_RELEASE("SRF08",&(sonar->mutex));
+    
+    return err; 
+
+}
+
+
+static int srf08_fire(SRF08* sonar, uint8_t daddress, uint8_t cmd)
+{
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("SRF08",&(sonar->mutex),TM_INFINITE);
+    
+    err = i2c_set(sonar->i2c, sonar->address, daddress, cmd, 'b' );
+    
+    UTIL_MUTEX_RELEASE("SRF08",&(sonar->mutex));
+    
+    return err; 
+}
+
+inline int srf08_fire_inch(SRF08* sonar)
+{
+    return srf08_fire(sonar, SRF08_REG_CMD,SRF08_CMD_RG_RESINCH);
+}
+
+inline int srf08_fire_cm(SRF08* sonar)
+{
+    return srf08_fire(sonar, SRF08_REG_CMD,SRF08_CMD_RG_RESCM);
+}
+
+inline int srf08_fire_usec(SRF08* sonar)
+{
+    return srf08_fire(sonar, SRF08_REG_CMD,SRF08_CMD_RG_RESUSEC);
+}
+
+/* TODO: Needed? */
+// int srf08_get_fw( address, i2cbus)
+// {
+//     i2c_get(address, SRF08_REG_CMD, i2cbus, 'b' );
+// }
+
 
 // TODO: BROADCAST RANGING COMMAND 
 //       max range
 //       analogue gain?
 //       ANN
-
-// TODO: MACROS AS FUNCTIONS
-
-// inline 
-// int srf08_fire_cm(uint8_t address, int i2cbus)
-// {
-//             return i2cset(I2C_SONAR0_ADDRESS, SRF08_REG_CMD,SRF08_CMD_RG_RESCM, I2C_SONAR0_BUS, 'b' );
-// }
-// 
-// inline 
-// int srf08_fire_inch(uint8_t address, int i2cbus)
-// {
-//             return i2cset(address, SRF08_REG_CMD,SRF08_CMD_RG_RESINCH, i2cbus, 'b' );
-// }
-// 
-// inline 
-// int srf08_fire_usec(uint8_t address, int i2cbus)
-// {
-//             return i2cset(address, SRF08_REG_CMD,SRF08_CMD_RG_USEC, i2cbus, 'b' );
-// }
-// 
-
 

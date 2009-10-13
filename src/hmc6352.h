@@ -1,6 +1,10 @@
 #ifndef __HMC6352_H__
 #define __HMC6352_H__
 
+
+#include <native/mutex.h>
+#include "i2ctools.c" 
+
 // Commands
 #define HMC6352_CMD_WRITE_EEPROM  0x77
 #define HMC6352_CMD_READ_EEPROM   0x72
@@ -65,30 +69,35 @@ typedef struct{
     RT_MUTEX mutex; 
 } HMC6352;
 
-int hmc6532_idcheck(uint8_t address, int i2cbus);
+int hmc6532_init(HMC6352* compass, I2CDEV* i2c, uint8_t address);
 
-int hmc6532_init_standby(uint8_t address, int i2cbus);
+int hmc6532_clean(HMC6352* compass);
 
-int hmc6532_init_query(uint8_t address, int i2cbus);
+int hmc6532_idcheck(HMC6352* compass);
 
-int hmc6532_init_continous(uint8_t address, int i2cbus,uint8_t freq);
+int hmc6532_init_standby(HMC6352* compass);
 
-int hmc6532_read_nowait(uint8_t address, int i2cbus, uint16_t* degrees);
+int hmc6532_init_query(HMC6352* compass);
 
-int hmc6532_read_wait(uint8_t address, int i2cbus, uint16_t* degrees);
+int hmc6532_init_continous(HMC6352* compass, uint8_t freq);
 
+// TODO: READ functions are not well made for the operating modes
+// standby -> should send two reads
+// query -> one read,gets the previos
+// continous -> does need the 'A' command
+int hmc6532_read_nowait(HMC6352* compass, uint16_t* degrees);
+
+inline int hmc6532_read_wait(HMC6352* compass, uint16_t* degrees);
 //TODO: The ones below need testing
-int hmc6532_enter_calibration(uint8_t address, int i2cbus);
+int hmc6532_enter_calibration(HMC6352* compass);
 
-int hmc6532_exit_calibration(uint8_t address, int i2cbus);
+int hmc6532_exit_calibration(HMC6352* compass);
 
-int hmc6532_sleep(uint8_t address, int i2cbus);
+int hmc6532_sleep(HMC6352* compass);
 
-int hmc6532_wakeup(uint8_t address, int i2cbus);
+int hmc6532_wakeup(HMC6352* compass);
 
 // TODO: Measure summing, time delay, software version
-// int hmc6532_read_calibrate(uint8_t address, int i2cbus);
-// 
 // int hmc6532_get_heading(uint8_t address, int i2cbus, int16_t* degrees);
 // 
 // int hmc6532_get_xy_raw(uint8_t address, int i2cbus, int16_t* x, int16_t* x );

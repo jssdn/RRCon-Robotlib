@@ -20,9 +20,9 @@ AR = $(CROSS_COMPILE)ar rcs
 
 #SOURCES = src/xspidev.c src/max1231adc.c src/i2ctools.c src/i2ctools/i2cbusses.c src/srf08.c src/lis3lv02dl.c src/tcn75.c src/hmc6352.c src/busio.c src/gpio.c src/lcd_proc.c src/openloop_motors.c src/hwservos.c
 
-SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c src/motors.c src/xspidev.c src/max1231adc.c src/lcd.c src/hwservos.c src/i2ctools/i2cbusses.c src/i2ctools.c
+SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c src/motors.c src/xspidev.c src/max1231adc.c src/lcd.c src/hwservos.c src/i2ctools/i2cbusses.c src/i2ctools.c src/hmc6352.c src/lis3lv02dl.c src/srf08.c src/gp2x.c
 # OBJECTS = $(SOURCES:.c=.o) # TODO:sed missing to remove src
-OBJECTS = busio.o gpio.o util.o platform_io.o motors.o xspidev.o max1231adc.o lcd.o hwservos.o i2cbusses.o i2ctools.o
+OBJECTS = busio.o gpio.o util.o platform_io.o motors.o xspidev.o max1231adc.o lcd.o hwservos.o i2cbusses.o i2ctools.o hmc6352.o lis3lv02dl.o srf08.o gp2x.o
 LIBNAME = librobot.a
 DEBUG = -DDEBUGMODE
 

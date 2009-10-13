@@ -149,30 +149,51 @@
 #define MAX1231_CONF_UNIDIFF_MASK 0x01
 #define MAX1231_CONF_BIPDIFF_MASK 0x02 
 
+#include <native/mutex.h>
+#include "xspidev.h"
+
 typedef struct{
+  XSPIDEV* xspi; 
+  RT_MUTEX mutex; 
   uint8_t pairs[8];  //CH0/1 - CH2/3 - CH4/5 - CH6/7 - CH8/9 - CH10/11 - CH12/13 - CH14/15
   uint8_t clock; // Clock and reference configuration
-} max1231_config; 
+} MAX1231; 
 
-// Configure all channels based on the max1230_config struct
-int adc_config(xspidev* xspi, max1231_config* conf);
+int max1231_init(MAX1231* adc, XSPIDEV* spi);
+
+int max1231_clean(MAX1231* adc);
+
+/* Config ADC inputs in different ways according to 'conf' */
+//NOTE: The caller should assure that the device is not accessed externally through a mutex/other somewhere else. Mutual exclusion is just guaranteed over the same xspidev structure.
+int max1231_config(MAX1231* adc);
+
 /* Low level write for 8bits to support genral commands*/
-int adc_ll_write8(xspidev* xspi, uint8_t tx, int sleep);
-/* Config all channels in single mode */
-#define adc_config_all_uni_single(xspi) adc_ll_write8(xspi,CMD_ALL_SINGLE, CMD_ALL_SINGLE_SLEEP)
+int adc_ll_write8(MAX1231* adc, uint8_t tx, int sleep);
+
+/* Reads an array of 'len' bytes to 'dest_array' */
+int adc_read(MAX1231* adc,uint8_t convbyte,uint8_t* dest_array, int len);
+
+/* Read one two bytes measure from the ADC */
+int adc_read_one_once(MAX1231* adc, uint8_t n, int* ret);
+
+/* Reads in Scan mode from byte 0 to N */
+int adc_read_scan_0_N(MAX1231* adc, uint8_t* dest, uint8_t n);
+
+/* Simplify reading of temperature and returns value in degrees */
+// Needs to divide by 8 afterwards
+int adc_get_temperature(MAX1231* adc, int* ret);
+
+/* TODO: Take it out from here */
+#define CMD_ALL_SINGLE_TX 0x64
+#define CMD_ALL_DIFF_TX 0x64
+
+#define adc_config_all_uni_single(xspi) adc_ll_write8(xspi,MAX1231_SETUP_EXTREF | MAX1231_SETUP_INTCLK, 1000)
 /* Config a pair('first', second)  in differential mode */
-#define adc_config_diff(xspi) 		adc_ll_write8(xspi,CMD_ALL_DIFF, CMD_ALL_DIFF)
+// #define adc_config_diff(xspi) 		adc_ll_write8(xspi,CMD_ALL_DIFF, CMD_ALL_DIFF)
+
 /* Reset the ADC */
-#define adc_reset(xspi) 		adc_ll_write8(xspi,MAX1231_RESET_ALL, MAX1231_RESET_ALL_SLEEP)
+#define adc_reset(xspi) 		adc_ll_write8(xspi,MAX1231_RESET_ALL, 1000)
 /* Reset FIFO */
-#define adc_reset_fifo(xspi) 		adc_ll_write8(xspi,MAX1231_RESET_FIFO, MAX1231_RESET_ALL_SLEEP)
-/* Reads n channels in scan mode */
-int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len);
-/* Reads one single-ended channel */
-int adc_read_one_once(xspidev* xspi,uint8_t n, int* ret);
-/* Returns temperature in degrees celsius */
-int adc_get_temperature(xspidev* xspi, int* ret);
-/* Returns temperature in degrees celsius  */
-int adc_read_scan_0_N(xspidev* xspi,uint8_t* dest, uint8_t n);
+#define adc_reset_fifo(xspi) 		adc_ll_write8(xspi,MAX1231_RESET_FIFO, 100)
 
 #endif

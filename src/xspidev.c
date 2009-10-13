@@ -23,7 +23,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: TO BE DONE. Untested
+    NOTE: DONE. Untested
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -40,73 +40,66 @@
 #include "xspidev.h"
 #include "util.h" 
 
-int spi_full_transfer(xspidev* xspi, uint8_t* tx, uint8_t* rx, int len)
+/* Not thread-safe */
+static int spi_set_config(XSPIDEV* xspi)
 {
-    int ret;
+    int err; 
+   
+    if ( ( xspi->fd = open(xspi->device, O_RDWR) ) < 0 ) 
+        return -EBUSY; //can't open fd
+    /*
+     * spi mode
+     */
+    if( ( err = ioctl(xspi->fd, SPI_IOC_WR_MODE, &xspi->mode) ) < 0 )
+        return -EIO; //"can't set spi mode" 
 
-    struct spi_ioc_transfer tr = {
-	.tx_buf = (unsigned long)tx,
-	.rx_buf = (unsigned long)rx,
-	//.len = ARRAY_SIZE(tx),
-	.len = len,
-	.delay_usecs = xspi->delay,
-	.speed_hz = xspi->speed,
-	.bits_per_word = xspi->bits,
-    };	
-    
-    if ((ret = ioctl(xspi->fd, SPI_IOC_MESSAGE(1), &tr)) == 1){
-	util_pdbg(DBG_WARN,"SPI: Can't send spi message. Error %d", ret);
-	return -EIO; 
-    }
-    
+    if( ( err = ioctl(xspi->fd, SPI_IOC_RD_MODE, &xspi->mode) ) < 0 )
+        return -EIO; //"can't get spi mode"
+    /*
+     * bits per word
+     */
+    if( (err = ioctl(xspi->fd, SPI_IOC_WR_BITS_PER_WORD, &xspi->bits)) < 0 )
+        return -EIO; //"can't set bits per word"
+
+    if( (err = ioctl(xspi->fd, SPI_IOC_RD_BITS_PER_WORD, &xspi->bits)) < 0 )
+        return -EIO; //can't get bits per word
+    /*
+     * max speed hz
+     */
+    if( (err = ioctl(xspi->fd, SPI_IOC_WR_MAX_SPEED_HZ, &xspi->speed)) < 0 )
+        return -EIO;//can't set max speed hz
+
+    if( (err = ioctl(xspi->fd, SPI_IOC_RD_MAX_SPEED_HZ, &xspi->speed)) < 0 )
+        return -EIO; // can't get max speed hz
+
     #if DBG_LEVEL == 5
-    for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
-	if (!(ret % 6))
-		puts(""); //TODO:CHANGE!
-	util_pdbg(DBG_DEBG, "%.2X ", rx[ret]);
-    }
+    util_pdbg(DBG_DEBG, "SPI: mode: %d\n", xspi->mode);
+    util_pdbg(DBG_DEBG, "SPI: bits per word: %d\n", xspi->bits);
+    util_pdbg(DBG_DEBG, "SPI: max speed: %d Hz (%d KHz)\n", xspi->speed, xspi->speed/1000);
     #endif
     
-    return 0; 	
+    return 0;
 }
 
-inline int spi_half_tranfer( xspidev* xspi, uint8_t* data, int len ) 
+int spi_init(	XSPIDEV* xspi, // STRUCT TO CONFIGURE
+		const char* devname, // DEVICE NAME 
+		uint32_t speed, // SPEED IN HZ
+		uint16_t delay, // DELAY IN ¿¿??
+		uint8_t bits, // BITS AT A TIME
+		uint8_t loop, // LOOPBACK MODE
+		uint8_t cpha, // CPHA
+		uint8_t cpol, // CPOL 
+		uint8_t lsb_first, // LSB FIRST
+		uint8_t cs_high, // CS HIGH
+		uint8_t spi_3wire) // 3 WIRE SPI MODE
 {
-    int status; 
-    if ( ( status = write( xspi->fd, data , len ) < 0 )){
-            util_pdbg(DBG_WARN, "SPI: Error writing to device %s\n",xspi->device); 
-            return -EIO;
-    }
-    return status; // written bytes
-}
-
-inline int spi_half_read( xspidev* xspi , uint8_t* data, int len ) 
-{
-    int status; 
-    if ( ( status = read( xspi->fd, data , len ) < 0 )){
-            util_pdbg(DBG_WARN, "SPI: Error reading from %s\n",xspi->device); 
-            return -EIO;
-    }
-    return status; // read bytes
-}
-
-
-int spi_configure(xspidev* xspi, // STRUCT TO CONFIGURE
-                  const char* devname, // DEVICE NAME 
-                  uint32_t speed, // SPEED IN HZ
-                  uint16_t delay, // DELAY IN ¿¿??
-                  uint8_t bits, // BITS AT A TIME
-                  uint8_t loop, // LOOPBACK MODE
-                  uint8_t cpha, // CPHA
-                  uint8_t cpol, // CPOL 
-                  uint8_t lsb_first, // LSB FIRST
-                  uint8_t cs_high, // CS HIGH
-                  uint8_t spi_3wire) // 3 WIRE SPI MODE
-{
+    int err; 
+    
     if ( devname == NULL || strlen(devname) >= DEVBUFFERSIZE ) //check for possible buffer overflow 
         return -ENODEV; 
 
     strncpy(xspi->device, devname, DEVBUFFERSIZE) ;
+    
     if( (xspi->fd = open(xspi->device, O_RDWR)) == 0) 
         return -EBUSY; //cannot open device
 
@@ -127,47 +120,88 @@ int spi_configure(xspidev* xspi, // STRUCT TO CONFIGURE
     if( spi_3wire > 0 ) 
         xspi->mode |= SPI_3WIRE ;
 
-    return 0;
+    UTIL_MUTEX_CREATE("SPI",&(xspi->mutex), NULL);
+
+    return spi_set_config(xspi);     
 }
 
-int spi_set_config(xspidev* xspi)
+int spi_clean(XSPIDEV* xspi)
 {
-    int ret; 
-    if ( ( xspi->fd = open(xspi->device, O_RDWR) ) < 0 ) 
-        return -EBUSY; //can't open fd
-    /*
-     * spi mode
-     */
-    if( ( ret = ioctl(xspi->fd, SPI_IOC_WR_MODE, &xspi->mode) ) < 0 )
-        return -EIO; //"can't set spi mode" 
+    int err; 
+    
+    UTIL_MUTEX_DELETE("SPI", &(xspi->mutex));
+    
+    return 0; 
+}
 
-    if( ( ret = ioctl(xspi->fd, SPI_IOC_RD_MODE, &xspi->mode) ) < 0 )
-        return -EIO; //"can't get spi mode"
-    /*
-     * bits per word
-     */
-    if( (ret = ioctl(xspi->fd, SPI_IOC_WR_BITS_PER_WORD, &xspi->bits)) < 0 )
-        return -EIO; //"can't set bits per word"
+int spi_full_transfer(XSPIDEV* xspi, uint8_t* tx, uint8_t* rx, int len)
+{
+    int err;
 
-    if( (ret = ioctl(xspi->fd, SPI_IOC_RD_BITS_PER_WORD, &xspi->bits)) < 0 )
-        return -EIO; //can't get bits per word
-    /*
-     * max speed hz
-     */
-    if( (ret = ioctl(xspi->fd, SPI_IOC_WR_MAX_SPEED_HZ, &xspi->speed)) < 0 )
-        return -EIO;//can't set max speed hz
-
-    if( (ret = ioctl(xspi->fd, SPI_IOC_RD_MAX_SPEED_HZ, &xspi->speed)) < 0 )
-        return -EIO; // can't get max speed hz
-
-
+    struct spi_ioc_transfer tr = {
+	.tx_buf = (unsigned long)tx,
+	.rx_buf = (unsigned long)rx,
+	//.len = ARRAY_SIZE(tx),
+	.len = len,
+	.delay_usecs = xspi->delay,
+	.speed_hz = xspi->speed,
+	.bits_per_word = xspi->bits,
+    };	
+    
+    UTIL_MUTEX_ACQUIRE("SPI",&(xspi->mutex),TM_INFINITE);
+    
+    err = ioctl(xspi->fd, SPI_IOC_MESSAGE(1), &tr);
+       
+    UTIL_MUTEX_RELEASE("SPI",&(xspi->mutex));
+    
+    if ( err == 1){
+	util_pdbg(DBG_WARN,"SPI: Can't send spi message. Error %d", err);
+	return -EIO; 
+    }
+    
     #if DBG_LEVEL == 5
-    util_pdbg(DBG_DEBG, "SPI: mode: %d\n", xspi->mode);
-    util_pdbg(DBG_DEBG, "SPI: bits per word: %d\n", xspi->bits);
-    util_pdbg(DBG_DEBG, "SPI: max speed: %d Hz (%d KHz)\n", xspi->speed, xspi->speed/1000);
+    for (err = 0; err < ARRAY_SIZE(tx); err++) {
+	if (!(err % 6))
+		puts(""); //TODO:CHANGE!
+	util_pdbg(DBG_DEBG, "%.2X ", rx[err]);
+    }
     #endif
     
-    return 0;
+    return 0; 	
 }
 
+int spi_half_transfer( XSPIDEV* xspi, uint8_t* data, int len ) 
+{
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("SPI",&(xspi->mutex),TM_INFINITE);
+    
+    err = write( xspi->fd, data , len );
+    
+    UTIL_MUTEX_RELEASE("SPI",&(xspi->mutex));
+    
+    if( err < 0 ){
+	util_pdbg(DBG_WARN, "SPI: Error writing to device %s\n",xspi->device); 
+	return -EIO;
+    }
+    
+    return err; // written bytes
+}
 
+int spi_half_read( XSPIDEV* xspi , uint8_t* data, int len ) 
+{
+    int err; 
+    
+    UTIL_MUTEX_ACQUIRE("SPI",&(xspi->mutex),TM_INFINITE);
+    
+    err = read( xspi->fd, data , len ); 
+    
+    UTIL_MUTEX_RELEASE("SPI",&(xspi->mutex));
+    
+    if ( err < 0 ){
+	util_pdbg(DBG_WARN, "SPI: Error reading from %s\n",xspi->device); 
+	return -EIO;
+    }    
+    
+    return err; // read bytes
+}

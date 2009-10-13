@@ -48,69 +48,81 @@ int dtable[] = { 0 , 10, 19, 28 , 38 , 47 , 57 ,
                  284 , 293 , 303 }; // up to 32 samples , others extrapolate 
 
 
-/* Config ADC inputs in different ways according to 'conf' */
-//NOTE: The caller should assure that the device is not accessed externally through a mutex/other somewhere else. Mutual exclusion is just guaranteed over the same xspidev structure. 
-int adc_config(xspidev* xspi, max1231_config* conf)
+int max1231_init(MAX1231* adc, XSPIDEV* spi)
 {
-    int ret,i; 
+    int err; 
+
+    util_pdbg(DBG_INFO, "Initializing MAX1231 ADC...\n");
+    
+    if( spi == NULL || adc == NULL ){	
+	util_pdbg(DBG_WARN, "MAX1231: Cannot use non-initialized devices...\n");
+	return -EFAULT; 
+    }
+
+    adc->xspi = spi; 
+    //TODO: configure the pairs for later on calling max1231_config
+    //--
+
+    UTIL_MUTEX_CREATE("MAX1231",&(adc->mutex), NULL);
+
+    return 0; 
+}
+
+int max1231_clean(MAX1231* adc)
+{
+    int err; 
+
+    util_pdbg(DBG_INFO, "Cleaning the MAX1231 ADC...\n");
+    
+    adc->xspi = NULL;
+    
+    UTIL_MUTEX_DELETE("MAX1231", &(adc->mutex));
+    
+    return err; 
+
+}
+
+/* Config ADC inputs in different ways according to 'conf' */
+//NOTE: The caller should assure that the device is not accessed externally through a mutex/other somewhere else. Mutual exclusion is just guaranteed over the same xspidev structure.
+int max1231_config(MAX1231* adc)
+{
+    int err,i; 
     // sanity check? 
-    uint8_t tx[8] = {0, }; // clock config + unipòlar config + 16 SCK clocks + clock config + bipolar config + 16 SCK clocks
-    tx[0] = conf->clock | MAX1231_SETUP_UNIDIFF; 
-    tx[4] = conf->clock | MAX1231_SETUP_BIPDIFF; 
+    uint8_t tx[8] = {0, }; // clock config + unipolar config + 16 SCK clocks + clock config + bipolar config + 16 SCK clocks
+    uint8_t rx[ARRAY_SIZE(tx)] = {0, };  
+    tx[0] = adc->clock | MAX1231_SETUP_UNIDIFF; 
+    tx[4] = adc->clock | MAX1231_SETUP_BIPDIFF; 
 
     for( i = 0 ; i < 8 ; i++ )
     {
-      if((conf->pairs[i] & MAX1231_CONF_BIPDIFF_MASK) != 0 )
-	  tx[5] = conf->pairs[i] >> 1 ; //i/2
-      if((conf->pairs[i] & MAX1231_CONF_UNIDIFF_MASK) != 0 ) // By Spec, Unipolar take predecence over bipolar, there is no need of sanity check here
-	  tx[1] = conf->pairs[i] >> 1 ; //i/2
+      if((adc->pairs[i] & MAX1231_CONF_BIPDIFF_MASK) != 0 )
+	  tx[5] = adc->pairs[i] >> 1 ; //i/2
+      if((adc->pairs[i] & MAX1231_CONF_UNIDIFF_MASK) != 0 ) // By Spec, Unipolar take predecence over bipolar, there is no need of sanity check here
+	  tx[1] = adc->pairs[i] >> 1 ; //i/2
      }
-
-     uint8_t rx[ARRAY_SIZE(tx)] = {0, };  
-
-    struct spi_ioc_transfer tr = {
-            .tx_buf = (unsigned long)tx,
-            .rx_buf = (unsigned long)rx,
-            .len = ARRAY_SIZE(tx),
-            .delay_usecs = xspi->delay,
-            .speed_hz = xspi->speed,
-            .bits_per_word = xspi->bits,
-    };
-
-    ret = ioctl(xspi->fd, SPI_IOC_MESSAGE(1), &tr);
-    
-    if (ret == 1){
-            util_pdbg(DBG_WARN, "MAX1231: Can't send spi message");
-            return -1;
+     
+    if( (err = spi_full_transfer(adc->xspi, tx, rx, ARRAY_SIZE(tx))) < 0 )
+    {
+	util_pdbg(DBG_WARN, "MAX1231: Can't config MAX1231");
+	return err; 
     }
-
-    return 0;
+	
+    return 0; 
 }
 
-/* TODO: All the following calls look the same. Optimize! */
-
-/* TODO: Take it out from here */
-#define CMD_ALL_SINGLE_TX 0x64
-#define CMD_ALL_SINGLE_SLEEP 1000
-
-#define CMD_ALL_DIFF_TX 0x64
-#define CMD_ALL_DIFF_SLEEP 1000
-
-#define MAX1231_RESET_ALL_SLEEP 100
-
 /* Low level write for 8bits to support genral commands*/
-int adc_ll_write8(xspidev* xspi, uint8_t tx, int sleep) 
+int adc_ll_write8(MAX1231* adc, uint8_t tx, int sleep) 
 {
     int err;
 
-    UTIL_MUTEX_ACQUIRE("MAX1231",&(xspi->mutex),TM_INFINITE);
+    UTIL_MUTEX_ACQUIRE("MAX1231",&(adc->mutex),TM_INFINITE);
     
-    err = write( xspi->fd, &tx , 1 );
-
-    UTIL_MUTEX_RELEASE("MAX1231",&(xspi->mutex));
+    err = spi_half_transfer(adc->xspi, &tx , 1 );
+			     
+    UTIL_MUTEX_RELEASE("MAX1231",&(adc->mutex));
 
     if ( err < 0 ){
-	util_pdbg(DBG_WARN, "Error writing to device %s\n",xspi->device); 
+	util_pdbg(DBG_WARN, "MAX1231: Error writing to device %s\n",(adc->xspi)->device); 
 	return -EIO;
     }
 
@@ -121,14 +133,14 @@ int adc_ll_write8(xspidev* xspi, uint8_t tx, int sleep)
 }
 
 /* Reads an array of 'len' bytes to 'dest_array' */
-int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len)
+int adc_read(MAX1231* adc,uint8_t convbyte,uint8_t* dest_array, int len)
 {
     int err,err2;
     int i ; 
 
-    UTIL_MUTEX_ACQUIRE("MAX1231",&(xspi->mutex),TM_INFINITE);
+    UTIL_MUTEX_ACQUIRE("MAX1231",&(adc->mutex),TM_INFINITE);
 
-    err = write( xspi->fd, &convbyte , 1 );
+    err = spi_half_transfer(adc->xspi, &convbyte , 1 );
     
     //Check times in a look-up table according to len 
     if( convbyte & MAX1231_CONV_TEMP )
@@ -138,13 +150,13 @@ int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len)
 
 // 	usleep(200); // should be less 
     
-    err2 = read( xspi->fd, dest_array , len );
+    err2 = spi_half_read(adc->xspi , dest_array, len);
 
-    UTIL_MUTEX_RELEASE("MAX1231",&(xspi->mutex));
+    UTIL_MUTEX_RELEASE("MAX1231",&(adc->mutex));
     
     if ( err2 < 0 || err < 0 ){
-	util_pdbg(DBG_WARN,"MAX1231: Error reading/writing from/to device %s. Read:%d Write:%d\n",xspi->device,err2,err); 
-	return err;
+	util_pdbg(DBG_WARN,"MAX1231: Error reading/writing from/to device %s. Read:%d Write:%d\n",(adc->xspi)->device,err2,err); 
+	return -EIO;
     }
 
     #if DBG_LEVEL == 5
@@ -157,7 +169,7 @@ int adc_read(xspidev* xspi,uint8_t convbyte,uint8_t* dest_array, int len)
 }
 
 /* Read one two bytes measure from the ADC */
-int adc_read_one_once(xspidev* xspi, uint8_t n, int* ret)
+int adc_read_one_once(MAX1231* adc, uint8_t n, int* ret)
 {
     int err; 
     uint8_t convbyte;
@@ -171,48 +183,42 @@ int adc_read_one_once(xspidev* xspi, uint8_t n, int* ret)
     else 
 	convbyte = 0x80 | ( n << 3 ) | MAX1231_CONV_SINGLE_READ ;
     
-    UTIL_MUTEX_ACQUIRE("MAX1231",&(xspi->mutex),TM_INFINITE);
-    
-    err = adc_read(xspi, convbyte, dest, 2 );
-    
-    UTIL_MUTEX_RELEASE("MAX1231",&(xspi->mutex));
-    
-    if ( err < 0 ){
-	util_pdbg(DBG_WARN, "MAX1231:Error reading from device %s. Error: %d\n",xspi->device,err); 
+                
+    if ((err = adc_read(adc, convbyte, dest, 2 )) < 0 ){
+	util_pdbg(DBG_WARN, "MAX1231:Error reading from device %s. Error: %d\n",adc->xspi->device, err); 
 	return -EIO;
     }
-
-
+    
     *ret = ( (int)(dest[0] << 8 ) | (int)dest[1] ); 
     
     return 0;
 }
 
 /* Reads in Scan mode from byte 0 to N */
-int adc_read_scan_0_N(xspidev* xspi, uint8_t* dest, uint8_t n)
+int adc_read_scan_0_N(MAX1231* adc, uint8_t* dest, uint8_t n)
 {
     int len = ((n & 0x0f) << 1) + 2; // n*2 + 2
     uint8_t convbyte;
 
-	if( n > 15) 
-	    return -1; // out of bounds
+    if( n > 15) 
+	return -1; // out of bounds
 
     convbyte = 0x80 | ( (n & 0x0f)  << 3 ) | MAX1231_CONV_SCAN_00_N ;
 
-    return adc_read(xspi, convbyte, dest, len );
+    return adc_read(adc, convbyte, dest, len );
 }
 
 /* Simplify reading of temperature and returns value in degrees */
 // Needs to divide by 8 afterwards
-int adc_get_temperature(xspidev* xspi, int* ret)
+int adc_get_temperature(MAX1231* adc, int* ret)
 {
     int err;
     
-    if((err= adc_read_one_once( xspi, 16, ret))<0){
+    if((err= adc_read_one_once( adc, 16, ret))<0){
 	util_pdbg(DBG_INFO, "MAX1231: Couldn't get temperature . Error : %d \n", err);
 	return err;
     }
     
-    *ret = *ret;
     return 0;
 }
+
