@@ -3,8 +3,10 @@
 
 //Xenomai
 #include <native/mutex.h>
-#include <busio.h>
 //--
+
+#include <busio.h>
+#include "dev_mmaps_parms.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -23,11 +25,6 @@
 #define DBG_WARN 3
 #define DBG_INFO 4
 #define DBG_DEBG 5
-
-// defines the current level of debugging. But should be somewhere else
-#ifndef DBG_LEVEL
-    #define DBG_LEVEL 5 
-#endif
 
 #if DBG_LEVEL != 0
 void util_pdbg(int msg, char *fmt, ...);

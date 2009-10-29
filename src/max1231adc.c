@@ -110,7 +110,7 @@ int max1231_config(MAX1231* adc)
     return 0; 
 }
 
-/* Low level write for 8bits to support genral commands*/
+/* Low level write for 8bits to support general commands*/
 int adc_ll_write8(MAX1231* adc, uint8_t tx, int sleep) 
 {
     int err;
@@ -136,7 +136,9 @@ int adc_ll_write8(MAX1231* adc, uint8_t tx, int sleep)
 int adc_read(MAX1231* adc,uint8_t convbyte,uint8_t* dest_array, int len)
 {
     int err,err2;
+    #ifdef DBG_LL_SPI
     int i ; 
+    #endif
 
     UTIL_MUTEX_ACQUIRE("MAX1231",&(adc->mutex),TM_INFINITE);
 
@@ -148,7 +150,9 @@ int adc_read(MAX1231* adc,uint8_t convbyte,uint8_t* dest_array, int len)
     else 
 	__usleep( dtable[(len>>1)] );
 
-// 	usleep(200); // should be less 
+    // -- !!!!TODO: REMOVE!
+    __usleep(200); // should be less 
+    // -- 
     
     err2 = spi_half_read(adc->xspi , dest_array, len);
 
@@ -159,10 +163,10 @@ int adc_read(MAX1231* adc,uint8_t convbyte,uint8_t* dest_array, int len)
 	return -EIO;
     }
 
-    #if DBG_LEVEL == 5
-    for( i = 0 ; i < len ; i ++){
-	util_pdbg(DBG_DEBG, "Read[%d]: 0x%x\n", i, dest_array[i]);
-    }
+    #ifdef DBG_LL_SPI
+     for( i = 0 ; i < len ; i ++){
+ 	util_pdbg(DBG_DEBG, "Read[%d]: 0x%x\n", i, dest_array[i]);
+     }
     #endif
     
     return 0; 
@@ -205,6 +209,7 @@ int adc_read_scan_0_N(MAX1231* adc, uint8_t* dest, uint8_t n)
 
     convbyte = 0x80 | ( (n & 0x0f)  << 3 ) | MAX1231_CONV_SCAN_00_N ;
 
+//     return adc_read(adc, convbyte, adc->dest, len );
     return adc_read(adc, convbyte, dest, len );
 }
 

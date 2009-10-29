@@ -127,7 +127,7 @@ typedef struct{
     int16_t xacc; 
     int16_t yacc;
     int16_t zacc;
-    
+    //Calibrated data
     int16_t xcal;
     int16_t ycal;
     int16_t zcal;

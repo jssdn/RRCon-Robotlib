@@ -21,7 +21,6 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: Done. Untested
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -60,7 +59,7 @@ int srf08_clean(SRF08* sonar)
 {
     int err; 
 
-    util_pdbg(DBG_INFO, "Cleaning the SRF08 accelerometer...\n");
+    util_pdbg(DBG_INFO, "Cleaning the SRF08...\n");
     
     sonar->i2c = NULL;
     sonar->address = 0x00;    
@@ -72,7 +71,8 @@ int srf08_clean(SRF08* sonar)
 
 int srf08_get_echo(SRF08* sonar, uint8_t n)
 {
-    int err; 
+    int err,res; 
+
     uint8_t offset; 
 
     if( n >= 17 )
@@ -82,40 +82,39 @@ int srf08_get_echo(SRF08* sonar, uint8_t n)
     
     UTIL_MUTEX_ACQUIRE("SRF08",&(sonar->mutex),TM_INFINITE);
     
-    //Get 16 bits TODO: why not just get word!?    
-    err = ((int) i2c_get(sonar->i2c, sonar->address, offset, 'b' ) << 8 ) | ((int) i2c_get(sonar->i2c, sonar->address, offset + 1, 'b' )) ;
+    //Get 16 bits TODO: why not just get word!?        
+    res = (((uint16_t)(i2c_get(sonar->i2c, sonar->address, offset, 'b' ))) << 8 ) | ((uint16_t) i2c_get(sonar->i2c, sonar->address, offset + 1, 'b' ));
     
     UTIL_MUTEX_RELEASE("SRF08",&(sonar->mutex));
-    
-    return err; 
+
+    return res; 
 }
 
 int srf08_get_light(SRF08* sonar) 
 {
-    int err; 
+    int err,res; 
     
     UTIL_MUTEX_ACQUIRE("SRF08",&(sonar->mutex),TM_INFINITE);
 
-    err = i2c_get(sonar->i2c, sonar->address, SRF08_REG_LIGHT, 'b' );
+    res = i2c_get(sonar->i2c, sonar->address,  'b' , SRF08_REG_LIGHT);
     
     UTIL_MUTEX_RELEASE("SRF08",&(sonar->mutex));
     
-    return err; 
-
+    return res; 
 }
 
 
 static int srf08_fire(SRF08* sonar, uint8_t daddress, uint8_t cmd)
 {
-    int err; 
+    int err,err2; 
     
     UTIL_MUTEX_ACQUIRE("SRF08",&(sonar->mutex),TM_INFINITE);
     
-    err = i2c_set(sonar->i2c, sonar->address, daddress, cmd, 'b' );
+    err2 = i2c_set(sonar->i2c, sonar->address, daddress, 'b', cmd );
     
     UTIL_MUTEX_RELEASE("SRF08",&(sonar->mutex));
     
-    return err; 
+    return err2; 
 }
 
 inline int srf08_fire_inch(SRF08* sonar)

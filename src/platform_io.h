@@ -45,12 +45,10 @@ inline int pio_write_fpgagpio(unsigned value);
 
 inline int pio_write_fpgagpio_tristate(unsigned value);
 
-// TODO: LCD Functions 
-
 // TODO: Remove. Unsafe functions
 
-inline int pio_write_go_all(unsigned value);
+inline int pio_write_go_all(unsigned value,unsigned off);
 
-inline int pio_read_gi_all(unsigned *ret);
+inline int pio_read_gi_all(unsigned *ret,unsigned off);
 
 #endif

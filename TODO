@@ -2,14 +2,12 @@ TODO LIST
 ------------
 < Global > 
 
-- Complete motors/encoders/PID support
 - Write documentation/README (Doxygen?)
-- Write other higher-level functions
 - Write conversion table for gyros
-- Add monitoring threaded functions for Gyros/GP2x/Analog inputs
-
 
 < Specific >
+    <motors.c>
+	- Complete motors/encoders/PID support
     <Max1231.c>
         - Add averaging support
         - Add extra scan modes 
@@ -28,8 +26,4 @@ TODO LIST
 
     <hmc6352.c> 
         - Correct TODOs
-
-<OTHERS>
-    <remote debugging>
-        - gdbserver over ssh
 

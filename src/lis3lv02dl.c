@@ -21,7 +21,6 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE:Done. Untested
 *  ******************************************************************************* **/
 
 
@@ -78,15 +77,15 @@ int lis3lv02dl_clean(LIS3LV02DL* acc)
 
 int lis3lv02dl_id_check(LIS3LV02DL* acc)
 {
-    int err; 
+    int err,res; 
     
     UTIL_MUTEX_ACQUIRE("LIS3LV02DL",&(acc->mutex),TM_INFINITE);
         
-    err = i2c_get(acc->i2c, acc->address, LIS3_REG_WHOAMI, 'b' );
+    res = i2c_get(acc->i2c, acc->address, LIS3_REG_WHOAMI, 'b' );
     
     UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
 
-    return err == LIS3_ID? 0 : -1; 
+    return res == LIS3_ID? 0 : -1; 
 }
 
 
@@ -96,7 +95,7 @@ int lis3lv02dl_poweroff(LIS3LV02DL* acc)
     
     UTIL_MUTEX_ACQUIRE("LIS3LV02DL",&(acc->mutex),TM_INFINITE);
 
-    err = i2c_set(acc->i2c, acc->address, LIS3_REG_CTRLREG1, LIS3_REG_CTRLREG1_PD_OFF , 'b' );
+    err = i2c_set(acc->i2c, acc->address, LIS3_REG_CTRLREG1, 'b', LIS3_REG_CTRLREG1_PD_OFF );
     
     UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
     
@@ -111,15 +110,16 @@ int lis3lv02dl_read(LIS3LV02DL* acc)
     UTIL_MUTEX_ACQUIRE("LIS3LV02DL",&(acc->mutex),TM_INFINITE);
 
     if ( ( err = i2c_get(acc->i2c, acc->address, LIS3_REG_STATUSREG, 'b' ) ) < 0 ) {
-        util_pdbg(DBG_WARN, "Cannot read 0x%x from LIS3LC02DL\n", LIS3_REG_STATUSREG ) ; 
+        util_pdbg(DBG_WARN, "LIS3LV02DL: Cannot read 0x%x from LIS3LV02DL\n", LIS3_REG_STATUSREG ) ; 
 	UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
         return err; 
     }
 
-    if( !(err & LIS3_REG_STATUSREG_ZYXDA_MASK) ){
-	UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
-        return -EAGAIN; // No new data available
-    }
+//     if( !(err & LIS3_REG_STATUSREG_ZYXDA_MASK) ){
+// 	util_pdbg(DBG_WARN, "LIS3LV02DL: No new data available\n" ) ; 
+// 	UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
+//         return -EAGAIN; // No new data available
+//     }
     
     if( (err & LIS3_REG_STATUSREG_ZYXOR_MASK) )
         acc->data_overrun = 1;
@@ -149,18 +149,12 @@ int lis3lv02dl_calib(LIS3LV02DL* acc)
 {
     int err; 
 
-    UTIL_MUTEX_ACQUIRE("LIS3LV02DL",&(acc->mutex),TM_INFINITE);
-    
-    if(( err = lis3lv02dl_read(acc) ) < 0 ){
-	UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
+    if(( err = lis3lv02dl_read(acc) ) < 0 )
         return err; 
-    }
     
     acc->xcal = acc->xacc;
     acc->ycal = acc->yacc;
     acc->zcal = acc->zacc;
-
-    UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
 
     return 0;
 }
@@ -173,22 +167,22 @@ int lis3lv02dl_init_3axis(LIS3LV02DL* acc)
     
     util_pdbg(DBG_INFO,"LIS3LV02DL: Initializing accelerometer in 3-axis 6G Scale\n");
     
-    UTIL_MUTEX_ACQUIRE("LIS3LV02DL",&(acc->mutex),TM_INFINITE);
-    
     if ( lis3lv02dl_id_check(acc) < 0){		
-	UTIL_MUTEX_RELEASE("LIS3LV02DL",&(acc->mutex));
+	util_pdbg(DBG_WARN,"LIS3LV02DL: Couldn't verify ID\n");
 	return -ENODEV;
     }
-
+    
+    UTIL_MUTEX_ACQUIRE("LIS3LV02DL",&(acc->mutex),TM_INFINITE);
+    
     /* Power-up device, Decimation 512 (40hz) and XYZ enabled */
     err = i2c_set( acc->i2c, acc->address, 
 		  LIS3_REG_CTRLREG1 ,
+		   'b' ,
                   LIS3_REG_CTRLREG1_PD_ON |
                   LIS3_REG_CTRLREG1_DEC_512 |
                   LIS3_REG_CTRLREG1_XEN_MASK |
-                  LIS3_REG_CTRLREG1_YEN_MASK |
-                  LIS3_REG_CTRLREG1_ZEN_MASK,                  
-                  'b' );
+                  LIS3_REG_CTRLREG1_YEN_MASK |		  
+                  LIS3_REG_CTRLREG1_ZEN_MASK);
 		  
     if( err < 0 ){
         util_pdbg(DBG_WARN,"LIS3LV02DL: Error when initializating for 3-axis\n");
@@ -200,12 +194,12 @@ int lis3lv02dl_init_3axis(LIS3LV02DL* acc)
      TODO:Interrupt disabled, 3-wire?, data 16 bit left */
     err = i2c_set( acc->i2c, acc->address, 
 		  LIS3_REG_CTRLREG2,
+		   'b' ,
                   LIS3_REG_CTRLREG2_FS_MASK | 
                   LIS3_REG_CTRLREG2_BDU_MASK |
                   LIS3_REG_CTRLREG2_DAS_MASK | 
                   LIS3_REG_CTRLREG2_BOOT_MASK | // TODO: Needed?
-                  LIS3_REG_CTRLREG2_SIM_MASK,
-                  'b' );
+                  LIS3_REG_CTRLREG2_SIM_MASK);
     
     //TODO: shouldn't offX be int8_t? 
     offx = i2c_get(acc->i2c, acc->address, LIS3_REG_OFFSETX , 'b' );

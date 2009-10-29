@@ -10,7 +10,8 @@
 
     License: Licensed under GPL2.0 
 
-    NOTE: This code assumes Xilinx i2c-bitbang module is used . Hence, capabilities of byte/word reading are assumed and not checked
+    NOTE: This code assumes capabilities of byte/word reading and are not checked.
+	  Tested with Xilinx IIC Core and Bitbanged i2c gpio core.
     
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,7 +27,6 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: Done. Untested
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -42,8 +42,6 @@
 #include <linux/i2c-dev.h>
 //Xenomai
 #include <native/mutex.h>
-//#include <pthread.h> /* Previously programmed with pthread */
-
 //--
 
 #include "i2cbusses.h"
@@ -69,7 +67,7 @@ int i2c_init(I2CDEV* i2c, uint8_t bus)
 	return -ENODEV; 
     }
 
-    util_pdbg(DBG_INFO, "Succesfully open file in %s on bus %d\n",i2c->filename,i2c->i2cbus);
+    util_pdbg(DBG_INFO, "I2C: Succesfully open file in %s on bus %d\n",i2c->filename,i2c->i2cbus);
 
     UTIL_MUTEX_CREATE("I2C",&(i2c->mutex),NULL);
    
@@ -126,8 +124,10 @@ int i2c_get( I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize)
 	    fprintf(stderr, "Error: Read failed\n");
 	    return -EIO;
     }
-        
+    
+    #ifdef DBG_LL_I2C
     util_pdbg(DBG_DEBG, "0x%0*x\n", csize == 'w' ? 4 : 2, res);    
+    #endif
     
     return res;
 }
@@ -135,7 +135,7 @@ int i2c_get( I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize)
 int i2c_set(I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize, unsigned value)
 {
     int res,err;
-
+    
     if (address > 0x7f) {
 	util_pdbg(DBG_WARN , "I2C: Chip address invalid!\n");
 	return -EADDRNOTAVAIL;
@@ -149,22 +149,17 @@ int i2c_set(I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize, unsigned
 	res = i2c_smbus_write_word_data(i2c->file, daddress, value & 0xffff);
     else 
 	res = i2c_smbus_write_byte_data(i2c->file, daddress, value & 0xff);
-       
-/*  TODO: REMOVE THIS? Readback? --> innefficient!
-    if (size == I2C_SMBUS_WORD_DATA) {
-	    res = i2c_smbus_read_word_data(file, daddress);
-    } else {
-	    res = i2c_smbus_read_byte_data(file, daddress);
-    }*/
     
     UTIL_MUTEX_RELEASE("I2C",&(i2c->mutex));    
     
     if (res < 0) {
-	fprintf(stderr, "Error: Write failed\n");
+	util_pdbg(DBG_WARN,  "Error: Write failed\n");
 	return -EIO;		
     }
-
+    
+    #ifdef DBG_LL_I2C
     util_pdbg(DBG_DEBG, "Written 0x%x on daddress:0x%x\n",value, daddress);
+    #endif
     
     return 0; 
 }
@@ -210,7 +205,9 @@ int i2c_set_1com( I2CDEV* i2c, uint8_t address, uint8_t arg1)
     if( res < 0 )
 	return -EIO;		
 
-    util_pdbg(DBG_DEBG, "Writing 0x%x on address:0x%x\n",address,arg1);
+    #ifdef DBG_LL_I2C
+    util_pdbg(DBG_DEBG, "Written 0x%x on address:0x%x\n",address,arg1);
+    #endif
     
     return 0;
 }

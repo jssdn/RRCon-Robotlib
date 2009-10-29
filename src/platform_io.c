@@ -188,12 +188,12 @@ inline int pio_write_fpgagpio_tristate(unsigned value)
 
 /* Unsafe access functions for muxed IOs */
 //TODO: REMOVE! Unsafe functions
-inline int pio_write_go_all(unsigned value)
+inline int pio_write_go_all(unsigned value,unsigned off)
 {
-    return gpio_write(&pio_genoutputs, ~0,0, 0, value);
+    return gpio_write(&pio_genoutputs, ~0,0, off, value);
 }
 
-inline int pio_read_gi_all(unsigned *ret)
+inline int pio_read_gi_all(unsigned *ret,unsigned off)
 {
-    return gpio_read(&pio_geninputs, ~0, 0, 0, ret);
+    return gpio_read(&pio_geninputs, ~0, 0, off, ret);
 }

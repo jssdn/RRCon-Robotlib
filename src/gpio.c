@@ -258,7 +258,7 @@ int gpio_clean(GPIO* gpio)
     UTIL_MUTEX_DELETE("GPIO",&(gpio->mutex));
 
     // TODO: check in another way
-    if(!gpio->isr){
+    if(gpio->isr != NULL){
 	if( ( err = rt_intr_delete(&(gpio->intr_desc))) < 0 ){
 	    util_pdbg(DBG_WARN, "GPIO: Cannot delete IRQ\n");
 	    return err; 

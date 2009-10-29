@@ -1,7 +1,7 @@
 /** *******************************************************************************
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+    Author: Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
             Based in code from the Linux Kernel documentation 
 
     Code: xspidev.c SPIDEV primitive functions (full/half duplex)
@@ -23,7 +23,6 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: DONE. Untested
 *  ******************************************************************************* **/
 
 #include <stdint.h>
@@ -72,11 +71,9 @@ static int spi_set_config(XSPIDEV* xspi)
     if( (err = ioctl(xspi->fd, SPI_IOC_RD_MAX_SPEED_HZ, &xspi->speed)) < 0 )
         return -EIO; // can't get max speed hz
 
-    #if DBG_LEVEL == 5
     util_pdbg(DBG_DEBG, "SPI: mode: %d\n", xspi->mode);
     util_pdbg(DBG_DEBG, "SPI: bits per word: %d\n", xspi->bits);
     util_pdbg(DBG_DEBG, "SPI: max speed: %d Hz (%d KHz)\n", xspi->speed, xspi->speed/1000);
-    #endif
     
     return 0;
 }
@@ -159,7 +156,7 @@ int spi_full_transfer(XSPIDEV* xspi, uint8_t* tx, uint8_t* rx, int len)
 	return -EIO; 
     }
     
-    #if DBG_LEVEL == 5
+    #ifdef DBG_LL_SPI
     for (err = 0; err < ARRAY_SIZE(tx); err++) {
 	if (!(err % 6))
 		puts(""); //TODO:CHANGE!

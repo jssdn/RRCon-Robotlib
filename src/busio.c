@@ -1,8 +1,8 @@
 /**
     Project: Robotics library for the Autonomous Robotics Development Platform  
-    Code: busio.c Low-level direct-IO allocations
-    Mods:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
-    Original code from Stephane Fillod (C) 2003
+    Code: busio.c Low-level Direct-IO allocations
+    Mods:Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+	 Original code from Stephane Fillod (C) 2003
  
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -81,6 +81,7 @@ volatile void * ioremap(unsigned long physaddr, unsigned size)
         axs_mem_fd,
         page_addr
     );
+    
     if (reg_mem == MAP_FAILED) {
 	util_pdbg(DBG_WARN, "ioremap: mmap error\n");        
         close(axs_mem_fd);
@@ -114,14 +115,12 @@ int mapio_region(volatile int** basep, long unsigned int baseadd, long unsigned 
 	return -EADDRNOTAVAIL;		
     }
 
-    #ifdef DEBUGMODE
     util_pdbg(DBG_DEBG, "Memory mapped at phy:0x%x-0x%x vrt=0x%x\n", (unsigned)baseadd, (unsigned)endadd, *basep); 
-    #endif
 
     return 0;
 }
 
-inline int unmapio_region(volatile int** basep, long unsigned int baseadd, long unsigned int endadd)
+int unmapio_region(volatile int** basep, long unsigned int baseadd, long unsigned int endadd)
 {
 
     if( (iounmap(*basep, endadd - baseadd)) < 0 )

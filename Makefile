@@ -24,7 +24,9 @@ SOURCES = src/busio.c src/gpio.c src/util.c src/platform_io.c src/motors.c src/x
 # OBJECTS = $(SOURCES:.c=.o) # TODO:sed missing to remove src
 OBJECTS = busio.o gpio.o util.o platform_io.o motors.o xspidev.o max1231adc.o lcd.o hwservos.o i2cbusses.o i2ctools.o hmc6352.o lis3lv02dl.o srf08.o gp2x.o
 LIBNAME = librobot.a
-DEBUG = -DDEBUGMODE
+DEBUG = -DDEBUGALL
+DEBUG_WARN = -DDEBUGWARN
+#DEBUGMODE
 
 EXSOURCES = src/ex/platex.c
 #EXSOURCES = xenomai_examples/control.c
@@ -82,7 +84,7 @@ banner:
 robotlib: banner $(SOURCES)
 	@echo 
 	@echo -e '\E[37;44m'"\033[1m----------------------------librobot-----------------------------------\033[0m"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) -DDEBUGMODE $(INCLUDES) -c $(SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) $(DEBUG) $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
 	@echo -e '\E[37;44m'"\033[1m----------------------------Lib done!----------------------------------\033[0m"
 	@echo 
@@ -90,7 +92,7 @@ robotlib: banner $(SOURCES)
 examples: lib/$(LIBNAME)	
 	@echo 
 	@echo -e '\E[37;44m'"\033[1m----------------------------examples-----------------------------------\033[0m"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) -DDEBUGMODE $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) $(DEBUG) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN)
 	@echo -e '\E[37;44m'"\033[1m----------------------------Examples done!-----------------------------\033[0m"
 	@echo 
 	
@@ -106,7 +108,7 @@ banner:
 robotlib: banner $(SOURCES)
 	@echo 
 	@echo -e '\E[37;31m'"\033[1m----------------------------librobot-----------------------------------\033[0m"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) -c $(SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(DEBUG_WARN) $(INCLUDES) -c $(SOURCES)
 	$(AR) lib/$(LIBNAME) $(OBJECTS)
 	@echo -e '\E[37;31m'"\033[1m----------------------------Lib done!----------------------------------\033[0m"
 	@echo 
@@ -114,7 +116,7 @@ robotlib: banner $(SOURCES)
 examples: lib/$(LIBNAME)
 	@echo 
 	@echo -e '\E[37;31m'"\033[1m----------------------------examples-----------------------------------\033[0m"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN) 
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(DEBUG_WARN) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN) 
 	@echo -e '\E[37;31m'"\033[1m----------------------------Examples done!-----------------------------\033[0m"
 	@echo 
 

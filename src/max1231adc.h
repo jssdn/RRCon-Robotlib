@@ -155,6 +155,7 @@
 typedef struct{
   XSPIDEV* xspi; 
   RT_MUTEX mutex; 
+//   uint8_t dest[34]; // 2*NumOfChannels + 2(temp)
   uint8_t pairs[8];  //CH0/1 - CH2/3 - CH4/5 - CH6/7 - CH8/9 - CH10/11 - CH12/13 - CH14/15
   uint8_t clock; // Clock and reference configuration
 } MAX1231; 
@@ -192,8 +193,8 @@ int adc_get_temperature(MAX1231* adc, int* ret);
 // #define adc_config_diff(xspi) 		adc_ll_write8(xspi,CMD_ALL_DIFF, CMD_ALL_DIFF)
 
 /* Reset the ADC */
-#define adc_reset(xspi) 		adc_ll_write8(xspi,MAX1231_RESET_ALL, 1000)
+#define adc_reset(adc_ptr) 		adc_ll_write8(adc_ptr,MAX1231_RESET_ALL, 1000)
 /* Reset FIFO */
-#define adc_reset_fifo(xspi) 		adc_ll_write8(xspi,MAX1231_RESET_FIFO, 100)
+#define adc_reset_fifo(adc_ptr) 		adc_ll_write8(adc_ptr,MAX1231_RESET_FIFO, 100)
 
 #endif

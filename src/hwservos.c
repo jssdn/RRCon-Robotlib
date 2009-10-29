@@ -20,7 +20,6 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: Done. Untested
 *  ******************************************************************************* **/
 
 #include <stdio.h>
@@ -55,8 +54,11 @@ int hwservos_init(HWSERVOS* servo, unsigned long base_add, unsigned long end_add
     
     if( num_of > HWSERVOS_MAX_NUM_OF )
 	return -ECHRNG;
+    
+    servo->num_of = num_of; 
 
     servo->values = malloc(sizeof(unsigned)*num_of);
+    
     for( i = 0; i < num_of ; i++ )
 	servo->values[i] = 0;
     
@@ -73,15 +75,23 @@ int hwservos_clean(HWSERVOS* servo)
     util_pdbg(DBG_DEBG, "HWSERVOS: Cleaning HWSERVOS...\n");
     
     //Disable servos before unmapping
-    for( i = 0 ; i <= servo->num_of ; i++ )
+    for( i = 0 ; i < servo->num_of ; i++ )
+    {
+	util_pdbg(DBG_DEBG, "\t-> HWSERVOS: Disabling servo %d\n", i);
 	hwservos_disable(servo,i);
-
+    }
+    
     if ( (err = unmapio_region(&(servo->vadd), servo->base_add, servo->end_add)) < 0 ){
-	util_pdbg(DBG_WARN, "HWSERVOS: couldn't be unmapped at virtual= 0x%x . Error : %d \n", &(servo->vadd), err);
+	util_pdbg(DBG_WARN, "\t-> HWSERVOS: couldn't be unmapped at virtual= 0x%x . Error : %d \n", &(servo->vadd), err);
 	return err; 
     }
     
-    UTIL_MUTEX_DELETE("HWSERVOS",&(servo->mutex));
+    free(servo->values);
+    
+    for( i = 0 ; i < servo->num_of ; i++ )
+    {    
+	UTIL_MUTEX_DELETE("\t-> HWSERVOS",&(servo->mutex));
+    }
     
     return 0;    
 }

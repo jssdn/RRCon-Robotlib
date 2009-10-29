@@ -5,7 +5,7 @@
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
     Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-    Code: Description for the mappings of the GPIO devices
+    Code: Description for IO mappings and parameters in the ML403-based development platform
 
     License: Licensed under GPL2.0 
 
@@ -87,6 +87,8 @@
 #define MOTORS_BASE 0xca400000
 #define MOTORS_END  0xca40ffff
 #define MOTORS_MAX_NUM_OF_CORES 16
+
+#define MOTORS_NUM_OF 4
 #define MOTORS_MAX_SPEED 1023   /* 11 bits signed  - PWM Duty Cycle */
 #define MOTORS_MAX_FREQ_DIV 255 /* 8 bits unsigned - Frequency divider over BUS Frequency */
 
@@ -95,14 +97,16 @@
 #define QENC_END  0xc460ffff
 #define QENC_MAX_NUM_OF_CORES 16
 
+#define QENC_NUM_OF 4
+
 /* PID Core address */
 //TODO: Yet to be implemented
 //#define PID_BASE 0x75020000
 //#define PID_END  0x7502ffff
 
 /** Servos **/
-#define HWSERVOS_BASE 0x73600000
-#define HWSERVOS_END  0x7360FFFF
+#define HWSERVOS_BASE 0xc5600000
+#define HWSERVOS_END  0xc560FFFF
 #define HWSERVOS_NUM_OF 4
 #define HWSERVOS_MAX_NUM_OF 8
 
@@ -140,5 +144,23 @@
 
 #define I2C_SONAR1_BUS 1
 #define I2C_SONAR1_ADDRESS 0x70
+
+/* Debug */
+#ifdef DEBUGALL 
+    #define DBG_LEVEL 5
+#else 
+    #ifdef DEBUGWARN
+        #define DBG_LEVEL 3
+    #endif
+#endif
+
+/* Default: Debug all */    
+#ifndef DBG_LEVEL
+    #define DBG_LEVEL 5 
+#endif
+
+/* Uncomment the following for low level debugging in the communication devices */
+//#define DBG_LL_I2C /* Debug Low-level IO calls from the I2C device */
+//#define DBG_LL_SPI /* Debug Low-level IO calls from the SPI device */
 
 #endif 
