@@ -2,7 +2,7 @@
     Project: Robotics library for the Autonomous Robotics Development Platform  
     Code: busio.c Low-level Direct-IO allocations
     Mods:Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
-	 Original code from Stephane Fillod (C) 2003
+	 Based on code by Stephane Fillod (C) 2003
  
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -46,7 +45,7 @@ extern inline void out_8(volatile unsigned char *addr, unsigned val)
 #endif
 
 
-volatile void * ioremap(unsigned long physaddr, unsigned size)
+volatile void* ioremap(unsigned long physaddr, unsigned size)
 {
     static int axs_mem_fd = -1;
     unsigned long page_addr, ofs_addr, reg, pgmask;

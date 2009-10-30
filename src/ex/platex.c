@@ -1,7 +1,7 @@
 /** ******************************************************************************
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
+    Author: Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
     Code: Example code for library testing
 
     License: Licensed under GPL2.0 
@@ -20,7 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-*  ******************************************************************************* **/
+* ******************************************************************************* **/
 
 #include <stdio.h>
 #include <unistd.h>
@@ -28,7 +28,6 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/time.h>
-// #include <sys/io.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -39,17 +38,20 @@
 #include <native/timer.h>
 #include <native/mutex.h>
 #include <native/intr.h>
+//-- 
 
 #include "gpio.h"            /* GPIO */
 #include "platform_io.h"     /* High-level functions for GPIO devices */
-#include "util.h"
-#include "motors.h"
-#include "hwservos.h"
-#include "i2ctools.h"
-#include "xspidev.h"
-#include "max1231adc.h"
-#include "srf08.h"
-#include "lis3lv02dl.h" 
+#include "util.h"	     /* Some commonly used functions all across the library */
+#include "motors.h"	     /* DC Motors and Encoders */
+#include "hwservos.h"        /* RC Servos controller */
+#include "i2ctools.h"	     /* I2C */
+#include "xspidev.h"	     /* SPI */
+#include "max1231adc.h"	     /* ADC */
+#include "srf08.h"	     /* Sonar */
+#include "lis3lv02dl.h"      /* Accelerometer */
+
+/* Xenomai task variables */
 
 #define STACK_SIZE 8192
 #define WATCHDOG_PRIO 26
@@ -57,11 +59,13 @@
 #define ADC_PRIO 2
 #define STD_PRIO 25
 
-// Global variables 
+/* Global variables */
 int irq_counter = 0; 
 int end = 0; 
+#define DEVSPI "/dev/spi0"
+//#define DEVSPI "/dev/spidev32766.0"
 
-// Platform devices 
+/* Platform devices */
 HWSERVOS servos; 
 MOTOR motors;
 XSPIDEV spi; 
@@ -70,13 +74,8 @@ I2CDEV i2c1;
 I2CDEV i2c2; 
 LIS3LV02DL acc; 
 SRF08 srf08; 
-//--
 
-#define DEVSPI "/dev/spi0"
-//#define DEVSPI "/dev/spidev32766.0"
-
-
-// Xenomai per-task variables 
+/* Xenomai per-task variables */
 RT_TASK watchdog_ptr;
 RT_TASK main_task_ptr;
 RT_TASK hwservos_ptr;
@@ -86,6 +85,7 @@ RT_TASK acc_ptr;
 RT_TASK sonar_ptr;
 RT_TASK clean_ptr;
 
+/* Xenomai Periodic tasks times (See scale below) */
 //			               --s-ms-us-ns
 RTIME watchdog_period_ns =  		 2500000000llu;
 RTIME hwservos_period_ns =  		 1000000000llu;
@@ -93,8 +93,8 @@ RTIME motors_period_ns =  		 3000000000llu;
 RTIME adc_period_ns =  			 1000000000llu;
 RTIME acc_period_ns =  			 3000000000llu;
 RTIME sonar_period_ns = 		 1500000000llu;
-// -- 
 
+/* ISR for GPIO - NOTE: Currently not being used */
 void gpio_isr(void* cookie)
 {	
     int err;
@@ -111,7 +111,7 @@ void gpio_isr(void* cookie)
     }
 }
 
-// print out the interrupt-count periodically
+/* Example of a Watchdog task */
 void watchdog(void *cookie) {
     int err;
     unsigned but; 
@@ -159,6 +159,7 @@ void watchdog(void *cookie) {
     }
 }
 
+/* Task that controls RC servos */
 void hwservos_task(void* cookie)
 {
     int err,i; 
@@ -189,6 +190,7 @@ void hwservos_task(void* cookie)
     }
 }
 
+/* Task that controls DC Motors and prints the status of the encoders */
 void motors_task(void* cookie)
 {
     int err, i; 
@@ -237,6 +239,7 @@ void motors_task(void* cookie)
     
 }
 
+/* Task that samples the ADC and give readings from channels */
 void adc_task(void* cookie)
 {
     int err,i,j; 
@@ -289,11 +292,12 @@ void adc_task(void* cookie)
     }       
 }
 
+/* Task that samples the accelerometer, calibrates it and displays G measures */
 void acc_task(void* cookie)
 {
     int err; 
     unsigned long overrun;
-    double x,y,z;
+    float x,y,z;
     	    
     if ((err = rt_task_set_periodic(NULL, TM_NOW, rt_timer_ns2ticks(motors_period_ns))) < 0) {
 	util_pdbg(DBG_WARN, "ACC_TASK: - Error while set periodic, code %d\n",err);
@@ -323,6 +327,7 @@ void acc_task(void* cookie)
     }
 }
 
+/* Task that fires the Sonar and displays some echoes */
 void sonar_task(void* cookie)
 {
     int err, i; 
@@ -349,6 +354,7 @@ void sonar_task(void* cookie)
 	}
 }
 
+/* RT Task that inits the devices and launches the other tasks */
 void main_task(void* cookie)
 {
     int err; 
@@ -468,7 +474,7 @@ void main_task(void* cookie)
     
 }
 
-/* Real-Time to clean objects ( some cannot be cleaned from a non-rt space ) */
+/* RT task to clean objects ( some cannot be cleaned from a non-rt space ) */
 void clean_rt_task(void* cookie)
 {
     //gpios
@@ -499,7 +505,8 @@ void clean_rt_task(void* cookie)
     
     end = 1;    
 }
-// signal-handler, to ensure clean exit on Ctrl-C
+
+/* Signal-handler, to ensure clean exit on Ctrl-C */
 void clean_exit(int dummy) 
 {
     int err; 

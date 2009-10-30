@@ -36,7 +36,6 @@ typedef struct{
     // Dynamically allocated array for the arbitrary number of motors that the core can handle 
     PWM* pwms; // array of structs
     QENC* encoders; // array of structs
-//     QENC encoders[4]; 
     PID* pids; // array of structs
 } MOTOR; 
 

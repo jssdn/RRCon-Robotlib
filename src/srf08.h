@@ -101,8 +101,8 @@
 typedef struct{
     I2CDEV* i2c; /* I2C device where the sensor is attached */
     uint8_t address; /* I2C bus address */
-    RT_MUTEX mutex;  /* Mutex */
 //     int16_t readings[17];    
+    RT_MUTEX mutex;  /* Mutex */
 } SRF08; 
     
 int srf08_init(SRF08* sonar,I2CDEV* i2c, uint8_t address);

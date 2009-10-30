@@ -5,9 +5,9 @@
 
 typedef struct{    
     uint8_t i2cbus;    
-    RT_MUTEX mutex;
     int file;
     char filename[80];
+    RT_MUTEX mutex;
 } I2CDEV; 
 
 int i2c_init(I2CDEV* i2c, uint8_t bus);

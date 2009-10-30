@@ -20,7 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-    NOTE: Done. Partially tested. IRQs needs improvements...
+    NOTE: Userspace HW IRQs need improvements...
 *  ******************************************************************************* **/
 
 #include <stdio.h>
@@ -56,6 +56,45 @@
 /*
     Writes to GPIO device
     gpio-> Gpio device
+    offset-> Offset to the address in the gpio
+    value-> Value to write
+*/
+
+int gpio_fast_write(GPIO* gpio, unsigned offset, unsigned value)
+{
+    int err; 
+
+    UTIL_MUTEX_ACQUIRE("GPIO",&(gpio->mutex), TM_INFINITE);
+ 
+    *(gpio->vadd + offset) = value; 
+
+    UTIL_MUTEX_RELEASE("GPIO",&(gpio->mutex));
+ 
+    return 0; 
+}
+
+/*
+    Writes to GPIO device
+    gpio-> Gpio device
+    offset-> Offset to the address in the gpio(set to 0 if writing directly to IO is desired)
+    ret-> return value
+*/
+int gpio_fast_read(GPIO* gpio, unsigned offset, unsigned* ret)
+{
+    int err; 
+
+    UTIL_MUTEX_ACQUIRE("GPIO",&(gpio->mutex), TM_INFINITE);
+
+    *ret = *(gpio->vadd + offset); 
+
+    UTIL_MUTEX_RELEASE("GPIO",&(gpio->mutex));
+
+    return 0; 
+}
+
+/*
+    Writes to GPIO device
+    gpio-> Gpio device
     mask-> Mask for muxed gpios
     shift-> Shift for muxed gpios
     offset-> Offset to the address in the gpio
@@ -67,11 +106,10 @@ int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsig
 
     UTIL_MUTEX_ACQUIRE("GPIO",&(gpio->mutex), TM_INFINITE);
  
-   // check flags for input only?
-    *(gpio->vadd + offset) = (value << shift) & mask; 
+    *(gpio->vadd + offset) = (*(gpio->vadd + offset) & ~mask ) | ((value << shift) & mask); 
 
     UTIL_MUTEX_RELEASE("GPIO",&(gpio->mutex));
-
+ 
     return 0; 
 }
 
@@ -83,12 +121,9 @@ int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsig
     offset-> Offset to the address in the gpio(set to 0 if writing directly to IO is desired)
     ret-> return value
 */
-
 int gpio_read(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsigned* ret)
 {
     int err; 
-
-    //TODO: check offset?
 
     UTIL_MUTEX_ACQUIRE("GPIO",&(gpio->mutex), TM_INFINITE);
 

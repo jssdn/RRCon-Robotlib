@@ -9,6 +9,7 @@
 #define GPIO_MAX_CHANNELS 2 /* Device max number of channels */
 #define GPIO_CHANNEL1 0x00 /* Offset of channel IO from base */
 #define GPIO_CHANNEL2 0x02 /* Offset of channel IO from base */
+#define GPIO_DATA_OFFSET 0     /* Offset for data */
 #define GPIO_TRISTATE_OFFSET 1 /* Offset from any channel */
 /* Global Interrupt Enable Register
    RW 
@@ -38,7 +39,7 @@
 #define GPIO_ISR_CHANNEL1_MASK GPIO_IER_CHANNEL1_MASK
 #define GPIO_ISR_CHANNEL2_MASK GPIO_IER_CHANNEL2_MASK
 
-/** Driver parameters **/
+/* Driver parameters */
 #define GPIO_FLAGS_INPUT 0x01	
 #define GPIO_FLAGS_OUTPUT 0x02 
 #define GPIO_IRQ_CHANNEL1 0x04
@@ -61,9 +62,40 @@ struct struct_gpio
 
 typedef struct struct_gpio GPIO; 
 
+int gpio_fast_write(GPIO* gpio, unsigned offset, unsigned value);
+
+int gpio_fast_read(GPIO* gpio, unsigned offset, unsigned* ret);
+
 int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsigned value);
 
 int gpio_read(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsigned* ret);
+
+/* Some quick macros */
+
+/* Write/Read from the DATA register */
+
+#define gpio_write_data(gpio,mask,shift,value) \
+	gpio_write(gpio, mask, shift, GPIO_DATA_OFFSET, value))
+
+#define gpio_read_data(gpio,mask,shift,ret) \
+	gpio_read(gpio, mask, shift, GPIO_DATA_OFFSET, ret))
+
+/* Write/Read from the TRISTATE register ( for bidirectional GPIOs) */
+
+#define gpio_set_dir(gpio,mask,shift,value) \
+	gpio_write(gpio, mask, shift, GPIO_TRISTATE_OFFSET, value))
+
+#define gpio_get_dir(gpio,mask,shift,ret) \
+	gpio_read(gpio, mask, shift, GPIO_TRISTATE_OFFSET, ret))
+
+/* Set mask to 1/0  - Useful for bit toggling */
+
+#define gpio_set1_mask(gpio, mask, offset) \
+	gpio_write(gpio, mask, 0, offset, ~0x0))
+
+#define gpio_set0_dir(gpio, mask, offset) \
+	gpio_write(gpio, mask, 0, offset, 0))
+
 
 /* Quick functions for IRQ handling inside the device */
 int gpio_irq_enable_global(GPIO* gpio);
@@ -78,7 +110,7 @@ int gpio_irq_disble_channel(GPIO* gpio,int n);
 
 int gpio_irq_isr_checkandtoggle_channel(GPIO* gpio,int n, unsigned* ret );
 
-//so far only for 1channel gpios
+/* TODO:So far only for 1channel GPIO cores */
 int gpio_init(GPIO* gpio, 
 	      long unsigned int base_add, 
 	      long unsigned int end_add, 

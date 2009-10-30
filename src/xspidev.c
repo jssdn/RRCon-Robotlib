@@ -2,7 +2,7 @@
 
     Project: Robotics library for the Autonomous Robotics Development Platform 
     Author: Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
-            Based in code from the Linux Kernel documentation 
+            Based in code from the Linux Kernel Documentation 
 
     Code: xspidev.c SPIDEV primitive functions (full/half duplex)
 

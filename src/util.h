@@ -15,7 +15,7 @@
      DBG_CRIT 2     critical error for application to exit 
      DBG_WARN 3     error that cause malfunction on the application if not handled
      DBG_INFO 4     useful information for tracking the program behaviour 
-     DBG_DEBG 4     debug information
+     DBG_DEBG 5     debug information
 
 */
 

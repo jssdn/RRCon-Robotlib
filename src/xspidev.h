@@ -20,7 +20,6 @@ typedef struct struct_xspidev {
     RT_MUTEX mutex;
 } XSPIDEV;
 
-
 int spi_init(	XSPIDEV* xspi, 
 		const char* devname, // DEVICE NAME 
 		uint32_t speed, // SPEED IN HZ
