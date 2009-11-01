@@ -75,26 +75,26 @@ int gpio_read(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsign
 /* Write/Read from the DATA register */
 
 #define gpio_write_data(gpio,mask,shift,value) \
-	gpio_write(gpio, mask, shift, GPIO_DATA_OFFSET, value))
+	gpio_write(gpio, mask, shift, GPIO_DATA_OFFSET, value)
 
 #define gpio_read_data(gpio,mask,shift,ret) \
-	gpio_read(gpio, mask, shift, GPIO_DATA_OFFSET, ret))
+	gpio_read(gpio, mask, shift, GPIO_DATA_OFFSET, ret)
 
 /* Write/Read from the TRISTATE register ( for bidirectional GPIOs) */
 
 #define gpio_set_dir(gpio,mask,shift,value) \
-	gpio_write(gpio, mask, shift, GPIO_TRISTATE_OFFSET, value))
+	gpio_write(gpio, mask, shift, GPIO_TRISTATE_OFFSET, value)
 
 #define gpio_get_dir(gpio,mask,shift,ret) \
-	gpio_read(gpio, mask, shift, GPIO_TRISTATE_OFFSET, ret))
+	gpio_read(gpio, mask, shift, GPIO_TRISTATE_OFFSET, ret)
 
 /* Set mask to 1/0  - Useful for bit toggling */
 
 #define gpio_set1_mask(gpio, mask, offset) \
-	gpio_write(gpio, mask, 0, offset, ~0x0))
+	gpio_write(gpio, mask, 0, offset, ~0x0)
 
-#define gpio_set0_dir(gpio, mask, offset) \
-	gpio_write(gpio, mask, 0, offset, 0))
+#define gpio_set0_mask(gpio, mask, offset) \
+	gpio_write(gpio, mask, 0, offset, 0)
 
 
 /* Quick functions for IRQ handling inside the device */

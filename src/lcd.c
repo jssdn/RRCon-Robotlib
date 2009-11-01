@@ -73,22 +73,24 @@ int lcd_data_latch(LCD* lcd, char rs, char data4b)
 
 int lcd_send_data_4bit(LCD* lcd, char rs, char data) 
 {
-    int err;
+    int err,err2;
     char data4b; 
 
     rs = rs? 0x20 : 0x00 ; 
 
+    UTIL_MUTEX_ACQUIRE("LCD:" ,&(lcd->mutex),TM_INFINITE);
+    
     // First nibble - MSbs
     data4b = (data >> 4); 
-    if ( (err = lcd_data_latch(lcd, rs, data4b)) < 0 )
-	return err;     
+    lcd_data_latch(lcd, rs, data4b);
     
-    // Second nibble - MSbs
+    // Second nibble - MSbs - Just need to get the error here
     data4b = data & 0x0f; 
-    if ( (err = lcd_data_latch(lcd, rs, data4b)) < 0 )
-	return err;     
+    err2 = lcd_data_latch(lcd, rs, data4b);
 
-    return 0; 
+    UTIL_MUTEX_RELEASE("LCD:" ,&(lcd->mutex));
+    
+    return err2; 
 }
 
 /* 
@@ -97,18 +99,20 @@ int lcd_send_data_4bit(LCD* lcd, char rs, char data)
 
 int lcd_send_nibble(LCD* lcd, char rs, char data) 
 {
-    int err; 
+    int err,err2; 
     char data4b; 
 
     rs = rs? 0x20 : 0x00 ; 
 
     // First nibble - MSbs
     data4b = data & 0x0f; 
+    UTIL_MUTEX_ACQUIRE("LCD:" ,&(lcd->mutex),TM_INFINITE);
+    
+    err2 = lcd_data_latch(lcd, rs, data4b);	
 
-    if ( (err = lcd_data_latch(lcd, rs, data4b)) < 0 )
-	return err;     
+    UTIL_MUTEX_RELEASE("LCD:" ,&(lcd->mutex));
 
-    return 0; 
+    return err2; 
 }
 
 /** 
@@ -222,6 +226,7 @@ int lcd_print(LCD* lcd, const char *msg)
 	    return err; 
         msg++;
     }
+    
     // we jump to the position 40
     lcd_send_data_4bit(lcd, 0, LCD_ADR2); 
     for( i = 0 ; i < 16 && *msg != 0 ; i++ ) {
@@ -232,3 +237,4 @@ int lcd_print(LCD* lcd, const char *msg)
     
     return 0; 
 }
+
