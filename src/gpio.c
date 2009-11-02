@@ -105,9 +105,9 @@ int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsig
     int err; 
 
     UTIL_MUTEX_ACQUIRE("GPIO",&(gpio->mutex), TM_INFINITE);
- 
+     
     *(gpio->vadd + offset) = (*(gpio->vadd + offset) & ~mask ) | ((value << shift) & mask); 
-
+ 
     UTIL_MUTEX_RELEASE("GPIO",&(gpio->mutex));
  
     return 0; 
@@ -133,6 +133,7 @@ int gpio_read(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsign
 
     return 0; 
 }
+
 
 /* Quick functions for IRQ handling inside the device */
 int gpio_irq_enable_global(GPIO* gpio)

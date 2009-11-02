@@ -18,9 +18,9 @@ AR = $(CROSS_COMPILE)ar rcs
 ###### ROBOTLIB CONFIGURATION ######
 
 DEBUG = -DDEBUGALL
-EXSOURCES = lcd_daemon.c 
+EXSOURCES = mode_selection.c 
 EXOBJECTS = $(EXSOURCES:.c=.o)
-EXBIN = ../bin/lcd_daemon
+EXBIN = ../bin/mode_selection
 INCLUDES = -I../src/ -I../src/i2ctools/ -I../include/
 #-I$(KSRC)/include/ -I$(ELDK)/usr/include/
 LDBIN = -L../lib/ -lrobot -L$(ELDK)/usr/lib -L$(ELDK)/lib
@@ -56,9 +56,9 @@ LDFLAGS=$(shell $(XENOCONFIG) --xeno-ldflags) $(MY_LDFLAGS) -lnative -O
 LDFLAGS+=-Xlinker -rpath -Xlinker $(shell $(XENOCONFIG) --libdir)
 
 ###### BUILD TARGETS ######
-all:: lcd_daemon
+all:: clean mode_selection
 
-lcd_daemon: $(EXSOURCES)
+mode_selection: $(EXSOURCES)
 	@echo 
 	@echo -e '\E[37;44m'"\033[1m----------------------------LCD_DAEMON---------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(DEBUG_WARN) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN) 

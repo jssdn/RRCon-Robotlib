@@ -1,6 +1,7 @@
-## ROBOTLIB MAKEFILE ## Jorge Sanchez de Nova jssdn@kth.se ##c
+## ROBOTLIB MAKEFILE ## Jorge Sanchez de Nova jssdn@kth.se ##
+
 # NOTE: FOR CROSS COMPILING USE STH LIKE THIS: 
-# > DESTDIR="~/xenomai/linux-2.6-denx/xenomai_userspace/local/" make LD_LIBRARY_PATH="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/lib" XENO="~/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/" ARCH="powerpc" KSRC="~/xenomai/linux-2.6-denx/" all
+# > DESTDIR="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/" make LD_LIBRARY_PATH="/home/dilbert/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/lib" XENO="~/xenomai/linux-2.6-denx/xenomai_userspace/local/usr/xenomai/" ARCH="powerpc" KSRC="~/xenomai/linux-2.6-denx/" all
 
 SHELL=/bin/bash
 ###### COMPILER CONFIGURATION ######
@@ -18,9 +19,9 @@ AR = $(CROSS_COMPILE)ar rcs
 ###### ROBOTLIB CONFIGURATION ######
 
 DEBUG = -DDEBUGALL
-EXSOURCES = lcd_daemon.c 
+EXSOURCES = main.c marvell_88e1111.c mii-bitbang.c 
 EXOBJECTS = $(EXSOURCES:.c=.o)
-EXBIN = ../bin/lcd_daemon
+EXBIN = ../bin/etherfix
 INCLUDES = -I../src/ -I../src/i2ctools/ -I../include/
 #-I$(KSRC)/include/ -I$(ELDK)/usr/include/
 LDBIN = -L../lib/ -lrobot -L$(ELDK)/usr/lib -L$(ELDK)/lib
@@ -56,13 +57,13 @@ LDFLAGS=$(shell $(XENOCONFIG) --xeno-ldflags) $(MY_LDFLAGS) -lnative -O
 LDFLAGS+=-Xlinker -rpath -Xlinker $(shell $(XENOCONFIG) --libdir)
 
 ###### BUILD TARGETS ######
-all:: lcd_daemon
+all:: etherfix
 
-lcd_daemon: $(EXSOURCES)
+etherfix: clean $(SOURCES)
 	@echo 
-	@echo -e '\E[37;44m'"\033[1m----------------------------LCD_DAEMON---------------------------------\033[0m"
+	@echo -e '\E[37;44m'"\033[1m----------------------------librobot-----------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(DEBUG_WARN) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN) 
-	@echo -e '\E[37;44m'"\033[1m----------------------------LCD_DAEMON done!---------------------------\033[0m"
+	@echo -e '\E[37;44m'"\033[1m----------------------------Lib done!----------------------------------\033[0m"
 	@echo 
 
 clean::

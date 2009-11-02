@@ -1,6 +1,6 @@
 v 0.4 - Xenomai
 ------
--- Total rewrite for Xenomai integration
+-- Total rewrite for Xenomai integration. More structured drivers.
 -- gpio.c/.h: support for interrupts and safe multiple access to registers 
 	      now is a more general intermediate layer for gpio modules
 -- platform_io.c/.h:  Added high-level functions to control the basic gpio_devices (leds, buttons,...)
@@ -8,6 +8,11 @@ v 0.4 - Xenomai
 -- lcd.c/.h: Added LCD control commands in userspace
 -- max1231.c/.h: Added support for Xenomai
 -- xspidev.c/.h: Added support for Xenomai
+-- all others: Added support for Xenomai 
+-- lcd_daemon: substitutes the LCD Kernel Module. Interfaces the LCD through a system pipe
+-- mode_selection: ported to new libary
+-- etherlite_fix: fix for forcing 100MBPS on Xilinx Etherlite Core ( view Xapp1042 )
+-- robex.c has been substitued by the new example platex.c
 
 v 0.34
 ------

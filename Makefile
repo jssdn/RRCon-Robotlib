@@ -95,7 +95,15 @@ examples: lib/$(LIBNAME)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSDEB) $(DEBUG) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN)
 	@echo -e '\E[37;44m'"\033[1m----------------------------Examples done!-----------------------------\033[0m"
 	@echo 
-	
+other_apps: lib/$(LIBNAME)	
+	@echo 
+	@echo -e '\E[37;45m'"\033[1m----------------------------Other Apps---------------------------------\033[0m"
+	make -C mode_selection -f Makefile all 
+	make -C lcd_daemon -f Makefile all 
+	make -C etherlite_fix -f Makefile all 
+	@echo -e '\E[37;45m'"\033[1m----------------------------Other Apps done!---------------------------\033[0m"
+	@echo 
+
 else
 banner: 
 	@echo  
@@ -118,6 +126,15 @@ examples: lib/$(LIBNAME)
 	@echo -e '\E[37;31m'"\033[1m----------------------------examples-----------------------------------\033[0m"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CFLAGSREL) $(DEBUG_WARN) $(INCLUDES) $(EXSOURCES) $(LDBIN) -o $(EXBIN) 
 	@echo -e '\E[37;31m'"\033[1m----------------------------Examples done!-----------------------------\033[0m"
+	@echo 
+	
+other_apps: lib/$(LIBNAME)	
+	@echo 
+	@echo -e '\E[37;45m'"\033[1m----------------------------Other Apps---------------------------------\033[0m"
+	make -C mode_selection -f Makefile all 
+	make -C lcd_daemon -f Makefile all 
+	make -C etherlite_fix -f Makefile all 
+	@echo -e '\E[37;45m'"\033[1m----------------------------Other Apps done!---------------------------\033[0m"
 	@echo 
 
 endif

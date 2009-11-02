@@ -42,6 +42,7 @@
 //-- 
 
 #include "lcd.h"            /* LCD */
+#include "version.h"
 
 /* Xenomai task variables */
 #define STACK_SIZE 8192
@@ -90,18 +91,20 @@ void lcd_task(void *cookie) {
     /* LCD initialization */
     if( ( err = lcd_init(&lcd)) < 0 ){
 	slog("LCD: Errror initializing lcd...\n"); 
-	return; 
+	exit(-1);
     }
     
+    /* Init lcd */
     lcd_on(&lcd);
-    lcd_clear(&lcd);
-    lcd_print(&lcd, "RRCon Platform  HW:3.1 SW:0.4  ");
-    
-    /* Connect the kernel-side of the message pipe to the special device file /dev/rtp7. */
-    if( (err = rt_pipe_create(&lcd_pipe_desc,"LCD_PIPE",7,0)) < 0 ){
+    lcd_clear(&lcd);    
+    sprintf(buf,"RRCon Platform  HW:%s SW:%s  ",HWVER,SWVER);
+    lcd_print(&lcd, buf);
+        
+    /* Connect the pipe to the special device file /dev/rtp7. */
+    if( (err = rt_pipe_create(&lcd_pipe_desc,"LCD_PIPE",P_MINOR_AUTO,0)) < 0 ){
 	slog("LCD: Error creating pipe. Exiting... %d\n",err);
 	perror(NULL);
-	return;
+	exit(-1);
     }
 
     /* We block until any process write into the pipe and just print the message on the LCD */
@@ -221,7 +224,7 @@ int main( int argc, char** argv )
 	pause();
 	fflush(NULL);	
     }
-    
+
     return 0; 
 }
 
