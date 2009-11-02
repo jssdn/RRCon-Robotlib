@@ -22,7 +22,6 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     
-    NOTE: Needs testing!
 *  ******************************************************************************* **/
 
 #include <stdio.h>
@@ -54,7 +53,7 @@
 int lcd_data_latch(LCD* lcd, char rs, char data4b)
 {
     int err; 
-    
+ 
     if ( (err = gpio_write(&(lcd->gpio), LCD16X2_LCD_MASK, 0, 0, (rs | data4b))) < 0 )
 	return err;     
     __usleep(41);
@@ -64,6 +63,7 @@ int lcd_data_latch(LCD* lcd, char rs, char data4b)
     if ( (err = gpio_write(&(lcd->gpio), LCD16X2_LCD_MASK, 0, 0, (rs | data4b ))) < 0 )
 	return err;     
     __usleep(41);
+
     return 0;
 }
 
@@ -159,7 +159,9 @@ int lcd_init(LCD* lcd)
 	    return err; 	
     }
     
-
+    /* Set all outputs */
+    gpio_set_dir(&(lcd->gpio),~0,0,0); 
+    
     UTIL_MUTEX_CREATE("LCD",&(lcd->mutex),NULL);
     
     // NOTE: output Display Set 3 times with 50ms delay. This workaround might be required sometimes for initialization 
