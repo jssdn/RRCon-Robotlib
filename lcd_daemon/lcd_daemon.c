@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -43,7 +44,6 @@
 #include "lcd.h"            /* LCD */
 
 /* Xenomai task variables */
-
 #define STACK_SIZE 8192
 #define LCD_PRIO 30
 
@@ -58,6 +58,24 @@ RT_PIPE lcd_pipe_desc;
 //			               --s-ms-us-ns
 RTIME lcd_period_ns =  		 0500000000llu;
 
+/* Other global variables */
+int dbool = 0; 
+
+/* Dirt log functions */
+void slog(char *fmt, ...)
+{ 
+    va_list args_ptr;
+    static char buf[80];
+    va_start(args_ptr,fmt);
+    vsprintf(buf, fmt, args_ptr);
+    va_end(args_ptr);
+    if (dbool)
+	syslog(LOG_INFO, "%s", buf);    
+    else{
+	printf("%s",buf);
+	fflush(NULL);
+    }
+}
 
 /* 
 *  lcd_task : Create a pipe called "LCD_PIPE" on /dev/rtp7 and reads from it
@@ -71,7 +89,7 @@ void lcd_task(void *cookie) {
     
     /* LCD initialization */
     if( ( err = lcd_init(&lcd)) < 0 ){
-	printf("LCD: Errror initializing lcd...\n"); 
+	slog("LCD: Errror initializing lcd...\n"); 
 	return; 
     }
     
@@ -79,10 +97,9 @@ void lcd_task(void *cookie) {
     lcd_clear(&lcd);
     lcd_print(&lcd, "RRCon Platform  HW:3.1 SW:0.4  ");
     
-    /* Connect the kernel-side of the message pipe to the
-    special device file /dev/rtp7. */
+    /* Connect the kernel-side of the message pipe to the special device file /dev/rtp7. */
     if( (err = rt_pipe_create(&lcd_pipe_desc,"LCD_PIPE",7,0)) < 0 ){
-	printf("LCD: Error creating pipe. Exiting... %d\n",err);
+	slog("LCD: Error creating pipe. Exiting... %d\n",err);
 	perror(NULL);
 	return;
     }
@@ -90,11 +107,11 @@ void lcd_task(void *cookie) {
     /* We block until any process write into the pipe and just print the message on the LCD */
     while (1) {		
 	if ((numb = rt_pipe_read(&lcd_pipe_desc, (void*)buf, 80, TM_INFINITE )) < 0) {
-	    printf("LCD: Error reading from pipe. Exiting... %d\n",err);
+	    slog("LCD: Error reading from pipe. Exiting... %d\n",err);
 	    perror(NULL);
 	    return;
 	}
-
+	slog("LCD: Received: %s\n", buf ); 
 	lcd_print(&lcd, buf);	
     }
 }
@@ -104,6 +121,8 @@ void clean_exit()
     printf("\n...cleanup!\n");
     rt_pipe_delete(&lcd_pipe_desc);
     rt_task_delete(&lcd_ptr);    
+    if(dbool)
+	closelog();
     fflush(NULL);
     exit(0);
 }
@@ -111,22 +130,21 @@ void clean_exit()
 int main( int argc, char** argv )
 {
     int err; 
-    int daemon = 0; 
     pid_t pid, sid;
 
     if( argc == 2 ){	
-	if( strcmp(argv[1],"-nd" ) == 3)
-	    daemon = 0; 
-	else if( strcmp(argv[1],"-d" ) == 2)
-	    daemon = 1; 
+	if( strcmp(argv[1],"-nd" ) == 0)
+	    dbool = 0; 
+	else if( strcmp(argv[1],"-d" ) == 0)
+	    dbool = 1; 
 	    else{ 
-		printf("\n Usage:\tlcd_deamon -d ( Daemonize )\n\tlcd_daemon -nd ( No fork )\n");
+		printf("Usage:\tlcd_deamon -d ( Daemonize )\n\tlcd_daemon -nd ( No fork )\n");
 		fflush(NULL);
 		exit(0);
 	    }
     }else{
-	printf(" Too many/few arguments!\n");
-	printf("\n Usage:\tlcd_deamon -d ( Daemonize )\n\tlcd_daemon -nd ( No fork )\n");
+	printf("Too many/few arguments!\n");
+	printf("Usage:\tlcd_deamon -d ( Daemonize )\n\tlcd_daemon -nd ( No fork )\n");
 	fflush(NULL);
 	exit(0);
     }
@@ -141,7 +159,7 @@ int main( int argc, char** argv )
 	    exit(-1);
     }   
     
-    if (daemon){
+    if (dbool){
 	pid = fork();
         if (pid < 0) {
 		exit(-1);
@@ -150,13 +168,20 @@ int main( int argc, char** argv )
         if (pid > 0) {
 		exit(0);
         }
+	
+	/* Avoid page fault for the forked process too */
+	if( ( err = mlockall(MCL_CURRENT | MCL_FUTURE)) < 0 ) {
+		printf("MAIN: Memory could not be locked. Exiting...\n");
+		exit(-1);
+	}   
 
         /* Change the file mode mask */
         umask(0);
                 
         /* Open any logs here */        
-	//TODO: SYSLOG!
-	  
+	openlog("lcd_log", LOG_PID|LOG_CONS, LOG_USER);
+	syslog(LOG_INFO, "Initalizating LCD syslog\n");
+
         /* Create a new SID for the child process */
         if ((sid = setsid()) < 0) {
                 /* Log the failure */
@@ -171,13 +196,13 @@ int main( int argc, char** argv )
         }
         
         /* Close out the standard file descriptors */
-	//TODO
-/*        close(STDIN_FILENO);
+
+        close(STDIN_FILENO);
         close(STDOUT_FILENO);
-        close(STDERR_FILENO);*/
+        close(STDERR_FILENO);
         
 	if( (err = rt_task_spawn(&lcd_ptr, "LCD Task", STACK_SIZE, LCD_PRIO, 0, &lcd_task, NULL)) < 0){
-		printf("MAIN: LCD task could not be correctly initialized\n");
+		syslog(LOG_ERR, "MAIN: LCD task could not be correctly initialized\n");
 		exit(err);
 	}	
                 
