@@ -40,33 +40,44 @@
 #include "gpio.h"
 #include "util.h"
 
-
-GPIO pio_geninputs; // Buttons / ADC EOC / ACC_INT / BUMPERS
-GPIO pio_genoutputs; // LEDS4 / LEDs_Position / USB_RESET
+GPIO pio_geninputs; // Buttons / BUMPERS / ADC EOC / ACC_INT 
+GPIO pio_genoutputs; // LEDS4 / LEDs_Position
 GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
-GPIO pio_lcd; // LCD / 
-
-// TODO: LCD 16x2 Functions 
 
 inline int pio_init_geninputs(void (*fisr)(void*))
 {
-	return gpio_init(&pio_geninputs, GENERAL_INPUTS_BASE, GENERAL_INPUTS_END, 
-			 GENERAL_INPUTS_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_IRQ_CHANNEL1, GENERAL_INPUTS_IRQ_NO, 
-			  fisr, GENERAL_INPUTS_IRQ_PRIO); 
+    int err; 
+    err = gpio_init(&pio_geninputs, GENERAL_INPUTS_BASE, GENERAL_INPUTS_END, 
+		    GENERAL_INPUTS_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_IRQ_CHANNEL1, GENERAL_INPUTS_IRQ_NO, 
+		    fisr, GENERAL_INPUTS_IRQ_PRIO); 
+		    
+    gpio_set_dir(&pio_geninputs,~0,0,~0); // all inputs
+    
+    return err; 
 }
 
 inline int pio_init_genoutputs()
 {
-	return gpio_init(&pio_genoutputs, GENERAL_OUTPUTS_BASE, GENERAL_OUTPUTS_END, 
-			  GENERAL_INPUTS_NUM_OF_CHAN, GPIO_FLAGS_OUTPUT, 0, 
-			  0, 0 );     
+    int err; 
+    err = gpio_init(&pio_genoutputs, GENERAL_OUTPUTS_BASE, GENERAL_OUTPUTS_END, 
+		    GENERAL_INPUTS_NUM_OF_CHAN, GPIO_FLAGS_OUTPUT, 0, 
+		    0, 0 );     
+		    
+    gpio_set_dir(&pio_genoutputs,~0,0,0); // all outputs
+    
+    return err; 
 }
 
 inline int pio_init_fpgagpio(void (*fisr)(void*))
 {
-	return gpio_init(&pio_fpgagpio, FPGA_GPIO8_BASE, FPGA_GPIO8_END, 
-			 FPGA_GPIO8_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_FLAGS_OUTPUT, FPGA_GPIO8_IRQ_NO, 
-			  fisr, FPGA_GPIO8_IRQ_PRIO);     
+    int err;
+    err = gpio_init(&pio_fpgagpio, FPGA_GPIO8_BASE, FPGA_GPIO8_END, 
+		    FPGA_GPIO8_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_FLAGS_OUTPUT, FPGA_GPIO8_IRQ_NO, 
+		    fisr, FPGA_GPIO8_IRQ_PRIO);
+
+    gpio_set_dir(&pio_fpgagpio,~0,0,~0); // all inputs by default
+
+    return err; 
 }
 
 int pio_init_all(void (*isr_ginputs)(void*), void (*isr_fpga)(void*))
@@ -79,15 +90,15 @@ int pio_init_all(void (*isr_ginputs)(void*), void (*isr_fpga)(void*))
     if( (res = pio_init_genoutputs()) < 0 )
 	    goto uninit_go_fpga;
     
-    if( (res = pio_init_fpgagpio(isr_fpga)) < 0 )
-	    goto uninit_fpga;
+/*    if( (res = pio_init_fpgagpio(isr_fpga)) < 0 )
+	    goto uninit_fpga;*/
     
     return 0;
     
-uninit_fpga:    
-    gpio_clean(&pio_geninputs);
-    gpio_clean(&pio_genoutputs);
-    util_pdbg(DBG_WARN, "PIO: GPIO FPGA_GPIO8 could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
+// uninit_fpga:    
+//     gpio_clean(&pio_geninputs);
+//     gpio_clean(&pio_genoutputs);
+//     util_pdbg(DBG_WARN, "PIO: GPIO FPGA_GPIO8 could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
 uninit_go_fpga:    
     gpio_clean(&pio_geninputs);
     util_pdbg(DBG_WARN, "PIO: GPIO \"General Outputs\" could not be initialized. Cleaning previosly initialized. Error:%d\n", res);
@@ -106,8 +117,8 @@ int pio_clean_all()
     if( (res = gpio_clean(&pio_genoutputs)) < 0 )
 	    goto uncleaned_gout;
     
-    if( (res = gpio_clean(&pio_fpgagpio)) < 0 )
-	    goto uncleaned_fpga;
+/*    if( (res = gpio_clean(&pio_fpgagpio)) < 0 )
+	    goto uncleaned_fpga;*/
     
     return 0; 
     
@@ -115,8 +126,8 @@ uncleaned_all:
    util_pdbg(DBG_WARN, "PIO: Error cleaning \"General Inputs\" GPIO. None could be cleaned. Error:%d \n", res);
 uncleaned_gout:
    util_pdbg(DBG_WARN, "PIO: Error cleaning \"General Outputs\". \"General Inputs\" could be cleaned.\n ", res);
-uncleaned_fpga:
-   util_pdbg(DBG_WARN, "PIO: Error cleaning GPIOs. \"General Inputs/Outputs\" could be cleaned. \n", res);
+// uncleaned_fpga:
+//    util_pdbg(DBG_WARN, "PIO: Error cleaning GPIOs. \"General Inputs/Outputs\" could be cleaned. \n", res);
 
    return res; 
 }
@@ -173,17 +184,20 @@ inline int pio_read_bumpers(unsigned* ret)
 /* FPGA_GPIO8 */
 inline int pio_read_fpgagpio(unsigned* ret)
 {
-    return gpio_read(&pio_fpgagpio, FPGA_GPIO8_MASK,0, 0, ret);    
+//     return gpio_read(&pio_fpgagpio, FPGA_GPIO8_MASK,0, 0, ret);
+    return 0;
 }
 
 inline int pio_write_fpgagpio(unsigned value)
 {
-    return gpio_write(&pio_fpgagpio, FPGA_GPIO8_MASK,0, 0, value);
+//     return gpio_write(&pio_fpgagpio, FPGA_GPIO8_MASK,0, 0, value);
+    return 0;
 }
 
 inline int pio_write_fpgagpio_tristate(unsigned value)
 {
-    return gpio_write(&pio_fpgagpio, FPGA_GPIO8_MASK,0, GPIO_TRISTATE_OFFSET, value);
+//     return gpio_write(&pio_fpgagpio, FPGA_GPIO8_MASK,0, GPIO_TRISTATE_OFFSET, value);
+    return 0;
 }
 
 /* Unsafe access functions for muxed IOs */
@@ -195,5 +209,5 @@ inline int pio_write_go_all(unsigned value,unsigned off)
 
 inline int pio_read_gi_all(unsigned *ret,unsigned off)
 {
-    return gpio_read(&pio_geninputs, ~0, 0, off, ret);
+    return gpio_fast_read(&pio_geninputs, off, ret);
 }

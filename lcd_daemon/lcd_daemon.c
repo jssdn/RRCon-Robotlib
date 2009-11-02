@@ -54,6 +54,8 @@ LCD lcd;
 /* Xenomai per-task variables */
 RT_TASK lcd_ptr;
 RT_PIPE lcd_pipe_desc;
+RT_PIPE lcd_pipe_line2_desc;
+RT_PIPE lcd_pipe_line1_desc;
 
 /* Other global variables */
 int dbool = 0; 
@@ -87,7 +89,7 @@ void lcd_task(void *cookie) {
     /* LCD initialization */
     if( ( err = lcd_init(&lcd)) < 0 ){
 	slog("LCD: Errror initializing lcd...\n"); 
-	return; 
+	exit(-1);
     }
     
     lcd_on(&lcd);
@@ -99,7 +101,7 @@ void lcd_task(void *cookie) {
     if( (err = rt_pipe_create(&lcd_pipe_desc,"LCD_PIPE",P_MINOR_AUTO,0)) < 0 ){
 	slog("LCD: Error creating pipe. Exiting... %d\n",err);
 	perror(NULL);
-	return;
+	exit(-1);
     }
 
     /* We block until any process write into the pipe and just print the message on the LCD */
@@ -219,7 +221,7 @@ int main( int argc, char** argv )
 	pause();
 	fflush(NULL);	
     }
-    
+
     return 0; 
 }
 
