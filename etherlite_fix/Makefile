@@ -21,7 +21,7 @@ AR = $(CROSS_COMPILE)ar rcs
 DEBUG = -DDEBUGALL
 EXSOURCES = main.c marvell_88e1111.c mii-bitbang.c 
 EXOBJECTS = $(EXSOURCES:.c=.o)
-EXBIN = etherfix
+EXBIN = ../bin/etherfix
 INCLUDES = -I../src/ -I../src/i2ctools/ -I../include/
 #-I$(KSRC)/include/ -I$(ELDK)/usr/include/
 LDBIN = -L../lib/ -lrobot -L$(ELDK)/usr/lib -L$(ELDK)/lib
@@ -67,4 +67,4 @@ etherfix: clean $(SOURCES)
 	@echo 
 
 clean::
-	$(RM) etherfix
+	$(RM) $(EXBIN)

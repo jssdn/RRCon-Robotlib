@@ -20,7 +20,7 @@ AR = $(CROSS_COMPILE)ar rcs
 DEBUG = -DDEBUGALL
 EXSOURCES = lcd_daemon.c 
 EXOBJECTS = $(EXSOURCES:.c=.o)
-EXBIN = lcd_daemon
+EXBIN = ../bin/lcd_daemon
 INCLUDES = -I../src/ -I../src/i2ctools/ -I../include/
 #-I$(KSRC)/include/ -I$(ELDK)/usr/include/
 LDBIN = -L../lib/ -lrobot -L$(ELDK)/usr/lib -L$(ELDK)/lib
@@ -66,4 +66,4 @@ lcd_daemon: $(EXSOURCES)
 	@echo 
 
 clean::
-	$(RM) lcd_daemon
+	$(RM) $(EXBIN)

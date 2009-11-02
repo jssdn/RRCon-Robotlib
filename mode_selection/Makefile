@@ -20,7 +20,7 @@ AR = $(CROSS_COMPILE)ar rcs
 DEBUG = -DDEBUGALL
 EXSOURCES = mode_selection.c 
 EXOBJECTS = $(EXSOURCES:.c=.o)
-EXBIN = mode_selection
+EXBIN = ../bin/mode_selection
 INCLUDES = -I../src/ -I../src/i2ctools/ -I../include/
 #-I$(KSRC)/include/ -I$(ELDK)/usr/include/
 LDBIN = -L../lib/ -lrobot -L$(ELDK)/usr/lib -L$(ELDK)/lib
@@ -66,4 +66,4 @@ mode_selection: $(EXSOURCES)
 	@echo 
 
 clean::
-	$(RM) mode_selection
+	$(RM) $(EXBIN)
