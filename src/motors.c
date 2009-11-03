@@ -96,7 +96,7 @@ int motors_init_motor(MOTOR* motor,
 	    util_pdbg(DBG_WARN, "\t-> MOTORS: Cannot allocate memory" );
 	    goto qenc_unmap;
 	}
-
+	motor->num_of_encs = num_of_encs; 
 	/* Create RT Mutexes */
 	for( iq = 0 ; iq < num_of_encs ; iq++ ){
  	    if( (err = rt_mutex_create(&(motor->encoders[iq].mutex), 0)) < 0 ){
