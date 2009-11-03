@@ -87,12 +87,9 @@ int hwservos_clean(HWSERVOS* servo)
     }
     
     free(servo->values);
-    
-    for( i = 0 ; i < servo->num_of ; i++ )
-    {    
-	UTIL_MUTEX_DELETE("\t-> HWSERVOS",&(servo->mutex));
-    }
-    
+
+    UTIL_MUTEX_DELETE("\t-> HWSERVOS",&(servo->mutex));
+
     return 0;    
 }
 

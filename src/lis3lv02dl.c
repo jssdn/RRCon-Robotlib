@@ -65,10 +65,10 @@ int lis3lv02dl_clean(LIS3LV02DL* acc)
 
     util_pdbg(DBG_INFO, "Cleaning the LIS3LV02DL accelerometer...\n");
     
+    err = lis3lv02dl_poweroff(acc); 
+    
     acc->i2c = NULL;
     acc->address = 0x00; 
-    
-    err = lis3lv02dl_poweroff(acc); 
     
     UTIL_MUTEX_DELETE("LIS3LV02DL", &(acc->mutex));
     

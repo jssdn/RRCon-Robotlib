@@ -56,7 +56,7 @@
 #define STACK_SIZE 8192
 #define WATCHDOG_PRIO 26
 #define MAX_PRIO 1
-#define ADC_PRIO 2
+#define ADC_PRIO 3
 #define STD_PRIO 25
 
 /* Global variables */
@@ -89,7 +89,7 @@ RT_TASK clean_ptr;
 //			               --s-ms-us-ns
 RTIME watchdog_period_ns =  		 0750000000llu;
 RTIME hwservos_period_ns =  		 1000000000llu;
-RTIME motors_period_ns =  		 3000000000llu;
+RTIME motors_period_ns =  		 2500000000llu;
 RTIME adc_period_ns =  			 1000000000llu;
 RTIME acc_period_ns =  			 3000000000llu;
 RTIME sonar_period_ns = 		 1500000000llu;
@@ -210,11 +210,12 @@ void motors_task(void* cookie)
 	
 	speed = (speed + 100)%MOTORS_MAX_SPEED;			
 	
-	for ( i = 0 ; i < MOTORS_NUM_OF ; i++)
+	for ( i = 0 ; i < MOTORS_NUM_OF ; i++){	    
 	    motors_pwm_set_speed(&motors, i, speed);	
+	    printf("MOTORS_TASK: - Motor %d speed %d/1023\n",i, speed);
+	}
 	
-	for ( i = 0 ; i < QENC_NUM_OF ; i++)
-	{
+	for ( i = 0 ; i < QENC_NUM_OF ; i++){
 	    motors_qenc_read_enc(&motors, i, &enc, &enc_prev);
 	    printf("MOTORS_TASK: - Quad Encoder %d counter: %d\n",i, enc);
 	}
@@ -236,21 +237,12 @@ void adc_task(void* cookie)
 	util_pdbg(DBG_WARN, "ADC_TASK: - Error while set periodic, code %d\n",err);
 	return;
     }
-
-    // Configuration with Gyros in differential mode
-    /*
-    adcconf.pairs[4] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
-    adcconf.pairs[5] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
-    adcconf.pairs[6] = MAX1231_CONF_BIPDIFF_MASK ;  // Gyro in differential mode
-    adcconf.clock = 0x64 ; 
-    adc_config(&xspi, &adcconf );
-    */
    
      // Configuration with Gyros in unipolar mode
     adc_reset(&adc); 
-    __usleep(10000); // TODO:needed? 
+    __usleep(10000); 
     adc_config_all_uni_single(&adc);
-    __usleep(10000); // TODO:needed?
+    __usleep(10000); 
 
     while (!end) {
 	err = rt_task_wait_period(&overrun);
@@ -352,8 +344,13 @@ void main_task(void* cookie)
 	util_pdbg(DBG_CRIT, "GPIO devices could not be correctly initialized\n");	    
 	perror(NULL);
 	exit(err);
-    }
+    }    
     
+    if( (err = rt_task_spawn(&watchdog_ptr, "Watchdog", STACK_SIZE, WATCHDOG_PRIO, 0, &watchdog, NULL)) < 0){
+	util_pdbg(DBG_CRIT, "MAIN: Watchdog could not be correctly initialized\n");
+	exit(err);
+    }
+        
     util_pdbg(DBG_INFO, "Initializing HWServos\n");
        
     if( (err = hwservos_init(&servos, HWSERVOS_BASE,HWSERVOS_END, HWSERVOS_NUM_OF)) < 0 ) {
@@ -463,33 +460,31 @@ void main_task(void* cookie)
 /* RT task to clean objects ( some cannot be cleaned from a non-rt space ) */
 void clean_rt_task(void* cookie)
 {
-    //gpios
-    pio_clean_all();
     //servos
-    hwservos_clean(&servos);
     rt_task_delete(&hwservos_ptr);    
+    hwservos_clean(&servos);    
     //motors
-    motors_clean_motor(&motors);    
     rt_task_delete(&motors_ptr);
-    //spi
+    motors_clean_motor(&motors);    
+    //ADC/SPI
+    rt_task_delete(&adc_ptr);
     max1231_clean(&adc);
     spi_clean(&spi);    
-    rt_task_delete(&adc_ptr);
+    //Accelerometer 
+    rt_task_delete(&acc_ptr);
+    lis3lv02dl_clean(&acc);
+    //Sonar
+    rt_task_delete(&sonar_ptr);
+    srf08_clean(&srf08);
     //i2c 
     i2c_clean(&i2c1);
     i2c_clean(&i2c2);
-    //Accelerometer 
-    lis3lv02dl_clean(&acc);
-    rt_task_delete(&acc_ptr);
-    //Sonar
-    srf08_clean(&srf08);
-    rt_task_delete(&sonar_ptr);
     //watchdog
     rt_task_delete(&watchdog_ptr);
-    //main
-    rt_task_delete(&main_task_ptr);    
-    
-    end = 1;    
+    //gpios
+    pio_clean_all();
+
+    end = 1;        
 }
 
 /* Signal-handler, to ensure clean exit on Ctrl-C */
@@ -503,8 +498,8 @@ void clean_exit(int dummy)
 	exit(err);
     }
     
-    while(!end);
-    rt_task_delete(&clean_ptr);        
+    rt_task_join(&clean_ptr);
+    
     exit(0);
 }
 
@@ -525,16 +520,11 @@ int main( int argc, char** argv )
 
     print_banner();	
 
-    if( (err = rt_task_spawn(&main_task_ptr, "Main task", STACK_SIZE, MAX_PRIO, 0, &main_task, NULL)) < 0){
+    if( (err = rt_task_spawn(&main_task_ptr, "Main task", STACK_SIZE, MAX_PRIO+1, 0, &main_task, NULL)) < 0){
 	util_pdbg(DBG_CRIT, "MAIN: Main task could not be correctly initialized\n");
 	exit(err);
     }
 
-    if( (err = rt_task_spawn(&watchdog_ptr, "Watchdog", STACK_SIZE, WATCHDOG_PRIO, 0, &watchdog, NULL)) < 0){
-	util_pdbg(DBG_CRIT, "MAIN: Watchdog could not be correctly initialized\n");
-	exit(err);
-    }
-    
     // wait for signal & return of signal handler
     pause();
     fflush(NULL);
