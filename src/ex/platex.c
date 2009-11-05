@@ -135,7 +135,7 @@ void watchdog(void *cookie) {
 	pio_write_ledspos(but);
 	
 	/* A simple binary counter here to illustrate */
- 	pio_write_leds4(i);
+//  	pio_write_leds4(i);
 	if(i == 0xf)
 	    i = 0;
 	else
@@ -297,9 +297,9 @@ void acc_task(void* cookie)
 	//ACC actions	
 	lis3lv02dl_read(&acc);
 	
-        x = (double)(acc.xacc - acc.xcal)/(SCALE_FACTOR_6G_16bit); 
-        y = (double)(acc.yacc - acc.ycal)/(SCALE_FACTOR_6G_16bit); 
-        z = (double)(acc.zacc - acc.zcal)/(SCALE_FACTOR_6G_16bit); 
+        x = (float)(acc.xacc - acc.xcal)/(SCALE_FACTOR_6G_16bit); 
+        y = (float)(acc.yacc - acc.ycal)/(SCALE_FACTOR_6G_16bit); 
+        z = (float)(acc.zacc - acc.zcal)/(SCALE_FACTOR_6G_16bit); 
 
         printf("ACC_TASK: X = %f\tY = %f\tZ = %f\n", x,y,z);
     }
