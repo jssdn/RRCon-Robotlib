@@ -3,7 +3,7 @@
 
 
 #include <native/mutex.h>
-#include "i2ctools.c" 
+#include "i2ctools.h" 
 
 // Commands
 #define HMC6352_CMD_WRITE_EEPROM  0x77

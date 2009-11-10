@@ -9,7 +9,6 @@
 #include <linux/types.h>
 
 #include "max1231adc.h"
-#include "gp2x.h"
 
 // GP2D120 
 
