@@ -1,0 +1,12 @@
+This example creates a single periodic realtime Orocos TaskContext that queries the ADC and displays the current temperature.
+
+The Makefile assumes that the cross compiled build system is present in /usr/local/ppc_4xx/build. CHANGE this to reflect your path if it is neccessary. Also, edit the Makefile and insert the appropriate path where you have installed librobot.
+
+Sagar (behere@kth.se)
+09 Nov. 2009
+
+This example won't be included in the main Makefile due to the use of Orocos. 
+
+Jorge Sánchez( jssdn(mail)_(at)kth.se )
+11 Nov. 2009 
+
