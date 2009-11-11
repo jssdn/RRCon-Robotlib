@@ -216,7 +216,13 @@ int motors_pwm_set_freq_div(MOTOR* motor, unsigned motnum, int value)
     
     return 0; 
 }
-// Read value from carrier divider
+/* 
+* That function tells the core which carrier frequency should use for the PWM signal. 
+* The recommended "rule of thumb" is between 10Khz and 24 Khz. The steps are the following: 
+* 0 - 190khz 1 - 48 khz 2 - 24 khz 3 - 16 Khz 
+* 4 - 12 Khz 5 - 9.8 Khz 6 - 8 Khz 7 - 7 Khz 
+* 8 - 6 Khz 9 - 5.43 Khz 10 - 4.9 Khz 11 - 4.4 Khz 12 - 4 Khz 
+*/
 int motors_pwm_read_freq_div(MOTOR* motor, unsigned motnum, unsigned* ret)
 {
     int err; 
