@@ -44,9 +44,10 @@ GPIO pio_geninputs; // Buttons / BUMPERS / ADC EOC / ACC_INT
 GPIO pio_genoutputs; // LEDS4 / LEDs_Position
 GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
 
-inline int pio_init_geninputs(void (*fisr)(void*))
+int pio_init_geninputs(void (*fisr)(void*))
 {
     int err; 
+    
     err = gpio_init(&pio_geninputs, GENERAL_INPUTS_BASE, GENERAL_INPUTS_END, 
 		    GENERAL_INPUTS_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_IRQ_CHANNEL1, GENERAL_INPUTS_IRQ_NO, 
 		    fisr, GENERAL_INPUTS_IRQ_PRIO); 
@@ -56,9 +57,10 @@ inline int pio_init_geninputs(void (*fisr)(void*))
     return err; 
 }
 
-inline int pio_init_genoutputs()
+int pio_init_genoutputs()
 {
     int err; 
+    
     err = gpio_init(&pio_genoutputs, GENERAL_OUTPUTS_BASE, GENERAL_OUTPUTS_END, 
 		    GENERAL_INPUTS_NUM_OF_CHAN, GPIO_FLAGS_OUTPUT, 0, 
 		    0, 0 );     
@@ -68,9 +70,10 @@ inline int pio_init_genoutputs()
     return err; 
 }
 
-inline int pio_init_fpgagpio(void (*fisr)(void*))
+int pio_init_fpgagpio(void (*fisr)(void*))
 {
     int err;
+    
     err = gpio_init(&pio_fpgagpio, FPGA_GPIO8_BASE, FPGA_GPIO8_END, 
 		    FPGA_GPIO8_NUM_OF_CHAN , GPIO_FLAGS_INPUT | GPIO_FLAGS_OUTPUT, FPGA_GPIO8_IRQ_NO, 
 		    fisr, FPGA_GPIO8_IRQ_PRIO);

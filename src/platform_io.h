@@ -12,16 +12,12 @@
 #include <linux/types.h>
 #include <errno.h> 
 
-// GPIO pio_geninputs; // Buttons / ADC EOC / ACC_INT / BUMPERS
-// GPIO pio_genoutputs; // LCD / LEDS4 / LEDs_Position / USB_RESET
-// GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
-
 /* Separate initializations for the devices */
-inline int pio_init_geninputs(void (*fisr)(void*));
+int pio_init_geninputs(void (*fisr)(void*));
 
-inline int pio_init_genoutputs();
+int pio_init_genoutputs();
 
-inline int pio_init_fpgagpio(void (*fisr)(void*));
+int pio_init_fpgagpio(void (*fisr)(void*));
 
 /* Joint functions for automated init of all devices */
 int pio_init_all(void (*isr_ginputs)(void*), void (*isr_fpga)(void*));
@@ -38,6 +34,9 @@ inline int pio_write_ledspos(unsigned value);
 
 /* ARROW POSITION BUTTONS */
 inline int pio_read_buttons(unsigned* ret);
+
+inline int pio_read_bumpers(unsigned* ret);
+
 /* FPGA_GPIO8 */
 inline int pio_read_fpgagpio(unsigned* ret);
 

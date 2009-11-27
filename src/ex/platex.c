@@ -136,10 +136,15 @@ void watchdog(void *cookie) {
 	
 	/* A simple binary counter here to illustrate */
 //  	pio_write_leds4(i);
-	if(i == 0xf)
-	    i = 0;
-	else
-	    i++;
+
+	pio_read_gi_all(&but,0);
+	
+	printf("WATCHDOG: Bumpers:%d\n",but); 
+	
+// 	if(i == 0xf)
+// 	    i = 0;
+// 	else
+// 	    i++;
     }
 }
 
