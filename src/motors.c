@@ -1,11 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-
-    Code: openloop_motors.c Functions for the basic DC motor control with quadrature enconder
-    License: Licensed under GPL2.0 
-
+/**
+    @file motors.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Functions for the basic DC motor control with quadrature enconder
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+ 
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -19,8 +24,12 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @note PID functions not implemented yet
 
-*  ******************************************************************************* **/
+    @version 0.4-Xenomai       
+    
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,13 +42,34 @@
 #include <linux/types.h>
 //Xenomai
 #include <native/mutex.h>
-
+//--
 #include "busio.h"
 #include "motors.h"
 #include "util.h"
 #include "dev_mmaps_parms.h"
 
-/* Motors */
+/**
+* @brief Init MOTORS device structure 
+*
+* @param motor Motor structure to use. Acts as an unified structure for Motors and Encoders.
+* @param madd_base Base address for the memory mapped PWM peripheral
+* @param madd_end End address for the memory mapped PWM peripheral
+* @param num_of_motors Number of motors attached to the PWM peripheral
+* @param qadd_base Base address for the memory mapped Quadrature Encoder peripheral
+* @param qadd_end End address for the memory mapped Quadrature Encoder peripheral
+* @param num_of_motors Number of encoders attached to the Quadrature Encoder peripheral
+* @param padd_base Base address for the memory mapped PID peripheral( Not implemented yet... )
+* @param padd_end End address for the memory mapped PID peripheral( Not implemented yet... )
+* @param num_of_motors Number of PIDs attached to the PID peripheral( Not implemented yet... )
+* @return 0 on success. Otherwise error. 
+*
+* Initializes all the peripherals unifying their control under the MOTOR device structure. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int motors_init_motor(MOTOR* motor, 
 		      unsigned long madd_base, unsigned long madd_end, unsigned num_of_motors, 
 		      unsigned long qadd_base, unsigned long qadd_end, unsigned num_of_encs, 
@@ -155,6 +185,17 @@ pwm_nothing:
 
 }
 
+/**
+* @brief Init MOTORS device structure 
+*
+* @param motor Cleans the MOTOR device structure. 
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int motors_clean_motor(MOTOR* motor)
 {
     int err;
@@ -197,9 +238,26 @@ int motors_clean_motor(MOTOR* motor)
 }
 
 
-/* PWM */
+/**
+* @brief Set the carrier frequency of the PWM through a divider
+*
+* @param motor MOTOR device structure
+* @param motnum Number of the motor attached to the PWM Core
+* @param value Value of the frequency divider factor. See note!
+* @return 0 on success. Otherwise error. 
+*
+* That function tells the core which carrier frequency should use for the PWM signal. 
+* The recommended "rule of thumb" is between 10Khz and 24 Khz
+*
+* @note 0 - 190khz 1 - 48 khz 2 - 24 khz 3 - 16 Khz 
+* 	4 - 12 Khz 5 - 9.8 Khz 6 - 8 Khz 7 - 7 Khz 
+* 	8 - 6 Khz 9 - 5.43 Khz 10 - 4.9 Khz 11 - 4.4 Khz 12 - 4 Khz
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
-// Set carrier divider 
 int motors_pwm_set_freq_div(MOTOR* motor, unsigned motnum, int value)
 {
     int err; 
@@ -216,13 +274,24 @@ int motors_pwm_set_freq_div(MOTOR* motor, unsigned motnum, int value)
     
     return 0; 
 }
-/* 
-* That function tells the core which carrier frequency should use for the PWM signal. 
-* The recommended "rule of thumb" is between 10Khz and 24 Khz. The steps are the following: 
-* 0 - 190khz 1 - 48 khz 2 - 24 khz 3 - 16 Khz 
-* 4 - 12 Khz 5 - 9.8 Khz 6 - 8 Khz 7 - 7 Khz 
-* 8 - 6 Khz 9 - 5.43 Khz 10 - 4.9 Khz 11 - 4.4 Khz 12 - 4 Khz 
+
+/**
+* @brief Read the carrier frequency of the PWM
+*
+* @param motor MOTOR device structure
+* @param motnum Number of the motor attached to the PWM Core
+* @param ret Read value
+* @return 0 on success. Otherwise error. 
+*
+* @note 0 - 190khz 1 - 48 khz 2 - 24 khz 3 - 16 Khz 
+* 	4 - 12 Khz 5 - 9.8 Khz 6 - 8 Khz 7 - 7 Khz 
+* 	8 - 6 Khz 9 - 5.43 Khz 10 - 4.9 Khz 11 - 4.4 Khz 12 - 4 Khz
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
 */
+
 int motors_pwm_read_freq_div(MOTOR* motor, unsigned motnum, unsigned* ret)
 {
     int err; 
@@ -237,7 +306,25 @@ int motors_pwm_read_freq_div(MOTOR* motor, unsigned motnum, unsigned* ret)
 
     return 0; 
 }
-// Set speed in DUTY CYCLE = speed/1023
+
+
+/**
+* @brief Set the duty cycle on a motor connected to a PWM Core
+*
+* @param motor MOTOR device structure
+* @param motnum Number of the motor attached to the PWM Core
+* @param value Value of the duty cycle
+* @return 0 on success. Otherwise error. 
+*
+* Set speed in DUTY CYCLE
+*
+* @note DUTY CYCLE = speed/1023
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int motors_pwm_set_speed(MOTOR* motor, int motnum, int value)
 {
     int err; 
@@ -255,7 +342,24 @@ int motors_pwm_set_speed(MOTOR* motor, int motnum, int value)
     
     return 0; 
 }
-// Read speed in DUTY CYCLE = speed/1023
+
+/**
+* @brief Read the duty cycle applied over a motor connected to a PWM Core
+*
+* @param motor MOTOR device structure
+* @param motnum Number of the motor attached to the PWM Core
+* @param ret Read value
+* @return 0 on success. Otherwise error. 
+*
+* Set speed in DUTY CYCLE
+*
+* @note DUTY CYCLE = speed/1023
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int motors_pwm_read_speed(MOTOR* motor, unsigned motnum, int* ret)
 {
     int err; 
@@ -271,9 +375,20 @@ int motors_pwm_read_speed(MOTOR* motor, unsigned motnum, int* ret)
     return 0; 
 }
 
-/* Encoders */
+/**
+* @brief Reset to zero the encoder values and log registers
+*
+* @param motor MOTOR device structure
+* @param qencnum Number of the encoder attached to the QENC Core
+* @return 0 on success. Otherwise error. 
+*
+* This function set the encoder peripheral registers to zero 
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
-// Reset to zero the encoder values and log registers 
 int motors_qenc_setzero(MOTOR* motor, unsigned qencnum )
 {
     int err; 
@@ -294,7 +409,22 @@ int motors_qenc_setzero(MOTOR* motor, unsigned qencnum )
     return 0; 
 }
 
-/* Read the number of pulses read during the movement by the quadrature decoder (signed integer) */
+/**
+* @brief Read the quadrature decoder readings from the motors.
+*
+* @param motor MOTOR device structure
+* @param qencnum Number of the encoder attached to the QENC Core
+* @param value Value of the duty cycle
+* @param prev_value Latched value from the previous reading ( timestamping should be performed outside )
+* @return 0 on success. Otherwise error. 
+*
+* Read the number of pulses read during the movement by the quadrature decoder (signed integer)
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int motors_qenc_read_enc(MOTOR* motor, unsigned qencnum, int* value, int* prev_value )
 {
     int err;
@@ -314,23 +444,48 @@ int motors_qenc_read_enc(MOTOR* motor, unsigned qencnum, int* value, int* prev_v
     return 0; 
 }
 
-/* PID */
-
 //TODO: To be implemented
-// Set params
+
+/**
+* @brief Dummy skeleton for the PID functions.
+*
+* @note To be implemented
+*
+*/
+
 void motors_pid_set_params(MOTOR* motor, unsigned pidnum, int kp, int ki, int kd)
 {
 }
-// Read params
+
+/**
+* @brief Dummy skeleton for the PID functions.
+*
+* @note To be implemented
+*
+*/
 int motors_pwm_read_kp(MOTOR* motor, unsigned pidnum, int* ret)
 {   
     return 0; 
 }
 
+/**
+* @brief Dummy skeleton for the PID functions.
+*
+* @note To be implemented
+*
+*/
+
 int motors_pwm_read_ki(MOTOR* motor, unsigned pidnum, int* ret)
 {    
     return 0;
 }
+
+/**
+* @brief Dummy skeleton for the PID functions.
+*
+* @note To be implemented
+*
+*/
 
 int motors_pwm_read_kd(MOTOR* motor, unsigned pidnum, int* ret)
 {

@@ -1,12 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-    Code: srf08.c Driver for SRF08 I2C Sonars
-
-    License: Licensed under GPL2.0 
+/**
+    @file srf08.c 
     
-    Copyright (C) Jorge Sánchez de Nova
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Driver for SRF08 I2C Sonars
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+       
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -20,8 +24,10 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @version 0.4-Xenomai
 
-*  ******************************************************************************* **/
+*/
 
 #include <stdint.h>
 #include <unistd.h>
@@ -35,6 +41,20 @@
 #include "srf08.h"
 #include "i2ctools.h"
 #include "util.h"
+
+/**
+* @brief Initialization of the SRF08 sonar device
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @param i2c I2C Bus where the SRF08 is attached
+* @return 0 on success. Otherwise error. 
+*
+* Initizializes the structure and creates corresponding mutex 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int srf08_init(SRF08* sonar,I2CDEV* i2c, uint8_t address)
 {
@@ -55,6 +75,19 @@ int srf08_init(SRF08* sonar,I2CDEV* i2c, uint8_t address)
     return 0;     
 }
 
+/**
+* @brief Clean for the SRF08 sonar device
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @return 0 on success. Otherwise error. 
+*
+* Cleans the structure and creates corresponding mutex 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int srf08_clean(SRF08* sonar)
 {
     int err; 
@@ -68,6 +101,21 @@ int srf08_clean(SRF08* sonar)
     
     return err;     
 }
+
+/**
+* @brief Read one echo from the the sonar
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @param n Echo number ( 0 - 17 ) 
+* @return read value. Negative values (int) should be considered as errors.  
+*
+* Get one echo from the sonar readings 
+* @note This function requires that the sensor has previously been shooted
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 int srf08_get_echo(SRF08* sonar, uint8_t n)
 {
@@ -90,6 +138,20 @@ int srf08_get_echo(SRF08* sonar, uint8_t n)
     return res; 
 }
 
+/**
+* @brief Read the light sensor from the SRF08
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @return read value ( 8 bit payload ). Negative values (int) should be considered as errors.  
+*
+* Get the LDR value from the SRF08 readings 
+* @note This function requires that the sensor has previously been shooted
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int srf08_get_light(SRF08* sonar) 
 {
     int err,res; 
@@ -103,6 +165,20 @@ int srf08_get_light(SRF08* sonar)
     return res; 
 }
 
+/**
+* @brief Shoots a sonar pulse
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @param daddress Command ( usecs, cm,. inch )
+* @return 0 on success. Negative values (int) should be considered as errors.  
+*
+* Fires a sonar pulse
+* @note This function requires its corresponding wait time afterwards in order to be able to read correct values
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 static int srf08_fire(SRF08* sonar, uint8_t daddress, uint8_t cmd)
 {
@@ -117,15 +193,57 @@ static int srf08_fire(SRF08* sonar, uint8_t daddress, uint8_t cmd)
     return err2; 
 }
 
+/**
+* @brief Shoots a sonar pulse and tell the SRFO8 to calculate distances in inches
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @return 0 on success. Negative values (int) should be considered as errors.  
+*
+* Fires a sonar pulse
+* @note This function requires its corresponding wait time afterwards in order to be able to read correct values
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 inline int srf08_fire_inch(SRF08* sonar)
 {
     return srf08_fire(sonar, SRF08_REG_CMD,SRF08_CMD_RG_RESINCH);
 }
 
+/**
+* @brief Shoots a sonar pulse and tell the SRFO8 to calculate distances in cm 
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @return 0 on success. Negative values (int) should be considered as errors.  
+*
+* Fires a sonar pulse
+* @note This function requires its corresponding wait time afterwards in order to be able to read correct values
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 inline int srf08_fire_cm(SRF08* sonar)
 {
     return srf08_fire(sonar, SRF08_REG_CMD,SRF08_CMD_RG_RESCM);
 }
+
+/**
+* @brief Shoots a sonar pulse and tell the SRFO8 to calculate distances in usec ( time of flight ) 
+*
+* @param sonar SRFO8 sonar peripheral to init
+* @return 0 on success. Negative values (int) should be considered as errors.  
+*
+* Fires a sonar pulse
+* @note This function requires its corresponding wait time afterwards in order to be able to read correct values
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 inline int srf08_fire_usec(SRF08* sonar)
 {

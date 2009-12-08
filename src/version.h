@@ -1,3 +1,14 @@
+/**
+    @file version.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Some string defines for displaying versioning and authoring.
+
+*/
+
 #ifndef __ROBOTLIB_VERSION_H__
 #define __ROBOTLIB_VERSION_H__
 

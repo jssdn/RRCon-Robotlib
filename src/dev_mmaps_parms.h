@@ -1,14 +1,17 @@
-#ifndef __GPIOMAPS_H__
-#define __GPIOMAPS_H__
-
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-    Code: Description for IO mappings and parameters in the ML403-based development platform
-
-    License: Licensed under GPL2.0 
-
+/**
+    @file dev_mmaps_parms.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Description for IO mappings and parameters in the ML403-based development platform
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+    @author Based on code by Stephane Fillod (C) 2003
+ 
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -22,8 +25,13 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @version 0.4-Xenomai
 
-*  ******************************************************************************* **/
+*/
+
+#ifndef __GPIOMAPS_H__
+#define __GPIOMAPS_H__
 
 // TODO: Get them in an automated manner
   

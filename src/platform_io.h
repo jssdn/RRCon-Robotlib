@@ -1,3 +1,14 @@
+/**
+    @file platform_io.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief [HEADER] Specific high-level functions for the control of the GPIO peripherals in the RRcon Platform
+    
+*/
+
 #ifndef __PLATFORM_IO_H__
 #define __PLATFORM_IO_H__
 

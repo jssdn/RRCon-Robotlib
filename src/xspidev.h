@@ -1,3 +1,14 @@
+/**
+    @file xspidev.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief [HEADER] SPIDEV primitive functions (full/half duplex)
+    
+*/
+
 #ifndef __SPIDEV_H__
 #define __SPIDEV_H__
 
@@ -10,14 +21,14 @@
 
 #define DEVBUFFERSIZE 25
 
-typedef struct struct_xspidev {
-    char device[DEVBUFFERSIZE]; //file descriptor 
-    int fd;
-    uint8_t mode;
-    uint8_t bits;
-    uint32_t speed;
-    uint16_t delay;
-    RT_MUTEX mutex;
+typedef struct {
+    char device[DEVBUFFERSIZE]; ///< File name of the device
+    int fd; ///< File descriptor
+    uint8_t mode; ///< SPI Mode
+    uint8_t bits; ///< Number of bits at a time
+    uint32_t speed; ///< SPI frequency speed
+    uint16_t delay; ///< Communication delay
+    RT_MUTEX mutex; ///< Xenomai Mutex
 } XSPIDEV;
 
 int spi_init(	XSPIDEV* xspi, 

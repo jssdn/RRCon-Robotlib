@@ -1,10 +1,15 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-    Code: max1231adc.c Driver for MAX1231/1230 ADCs
-
-    License: Licensed under GPL2.0 
+/**
+    @file max1231adc.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Driver for MAX1231/1230 ADCs
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se    
+    
+    @section LICENSE 
     
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -19,8 +24,10 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @version 0.4-Xenomai
 
-*  ******************************************************************************* **/
+*/
 
 #include <stdint.h>
 #include <unistd.h>
@@ -47,6 +54,20 @@ int dtable[] = { 0 , 10, 19, 28 , 38 , 47 , 57 ,
                  284 , 293 , 303 }; // up to 32 samples , others extrapolate 
 
 
+/**
+* @brief Initialization for the MAX1231 device
+*
+* @param adc MAX1231 device to use
+* @param spi Already initialized SPIDEV device to use
+* @return 0 on success. Otherwise error. 
+*
+* Initizializes the structure and creates corresponding mutex 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int max1231_init(MAX1231* adc, XSPIDEV* spi)
 {
     int err; 
@@ -67,6 +88,19 @@ int max1231_init(MAX1231* adc, XSPIDEV* spi)
     return 0; 
 }
 
+/**
+* @brief Cleans the MAX1231 device
+*
+* @param adc MAX1231 device to clena
+* @return 0 on success. Otherwise error. 
+*
+* Cleans structure and Mutex
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int max1231_clean(MAX1231* adc)
 {
     int err; 
@@ -81,8 +115,17 @@ int max1231_clean(MAX1231* adc)
 
 }
 
-/* Config ADC inputs in different ways according to 'conf' */
-//NOTE: The caller should assure that the device is not accessed externally through a mutex/other somewhere else. Mutual exclusion is just guaranteed over the same xspidev structure.
+/**
+* @brief Configs the MAX1231 device
+*
+* @param adc MAX1231 device to clena
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int max1231_config(MAX1231* adc)
 {
     int err,i; 
@@ -109,7 +152,21 @@ int max1231_config(MAX1231* adc)
     return 0; 
 }
 
-/* Low level write for 8bits to support general commands*/
+/**
+* @brief Write for 8bits commands
+*
+* @param adc MAX1231 device to clena
+* @param tx TX buffer for the max1231
+* @param sleep 
+* @return 0 on success. Otherwise error. 
+*
+* Low level write for 8bits to support general commands
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int adc_ll_write8(MAX1231* adc, uint8_t tx, int sleep) 
 {
     int err;
@@ -131,7 +188,22 @@ int adc_ll_write8(MAX1231* adc, uint8_t tx, int sleep)
     return 0;    
 }
 
-/* Reads an array of 'len' bytes to 'dest_array' */
+/**
+* @brief Reads from MAX1231
+*
+* @param adc MAX1231 device to clena
+* @param convbyte Conversion byte 
+* @param dest_array Destination array for readings
+* @param len Length of dest_array
+* @return 0 on success. Otherwise error. 
+*
+* Reads an array of 'len' bytes to 'dest_array'
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int adc_read(MAX1231* adc,uint8_t convbyte,uint8_t* dest_array, int len)
 {
     int err,err2;
@@ -171,7 +243,21 @@ int adc_read(MAX1231* adc,uint8_t convbyte,uint8_t* dest_array, int len)
     return 0; 
 }
 
-/* Read one two bytes measure from the ADC */
+/**
+* @brief Reads one measure MAX1231
+*
+* @param adc MAX1231 device to clena
+* @param n Channel number
+* @param ret Read value
+* @return 0 on success. Otherwise error. 
+*
+* Read one 16 bit ( actual 12 ) measure from the ADC
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int adc_read_one_once(MAX1231* adc, uint8_t n, int* ret)
 {
     int err; 
@@ -197,7 +283,21 @@ int adc_read_one_once(MAX1231* adc, uint8_t n, int* ret)
     return 0;
 }
 
-/* Reads in Scan mode from byte 0 to N */
+/**
+* @brief Reads n measures from 0 to n
+*
+* @param adc MAX1231 device to clena
+* @param n Channel number
+* @param dest Destination array
+* @return 0 on success. Otherwise error. 
+*
+* Reads in Scan mode from byte 0 to N
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int adc_read_scan_0_N(MAX1231* adc, uint8_t* dest, uint8_t n)
 {
     int len = ((n & 0x0f) << 1) + 2; // n*2 + 2
@@ -212,8 +312,25 @@ int adc_read_scan_0_N(MAX1231* adc, uint8_t* dest, uint8_t n)
     return adc_read(adc, convbyte, dest, len );
 }
 
-/* Simplify reading of temperature and returns value in degrees */
-// Needs to divide by 8 afterwards
+
+/**
+* @brief Reads the temperature from the MAX1231
+*
+* @param adc MAX1231 device to clena
+* @param n Channel number
+* @param dest Destination array
+* @return 0 on success. Otherwise error. 
+*
+* Reads the temperature from the internal sensor in the MAX1231
+* Simplify reading of temperature and returns value in degrees
+*
+* @note Needs to downscale(divide) by 8 afterwards
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int adc_get_temperature(MAX1231* adc, int* ret)
 {
     int err;

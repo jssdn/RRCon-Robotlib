@@ -1,3 +1,14 @@
+/**
+    @file hmc6352.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief [HEADER] HMC6352 Magnetic compass driver
+    
+*/
+
 #ifndef __HMC6352_H__
 #define __HMC6352_H__
 
@@ -19,29 +30,28 @@
 #define HMC6352_CMD_GETDATA       0x41
 
 //EEPROM REGS 
-#define HMC6352_EE_REG_ADDRESS  0x00 /* I2C Slave Address - 0x42 */
-#define HMC6352_EE_REG_XOFF_MSB 0x01 /* Magnetometer X Offset MSB */
-#define HMC6352_EE_REG_XOFF_LSB 0x02 /* Magnetometer X Offset LSB */
-#define HMC6352_EE_REG_YOFF_MSB 0x03 /* Magnetometer Y Offset MSB */
-#define HMC6352_EE_REG_YOFF_LSB 0x04 /* Magnetometer Y Offset LSB */
-#define HMC6352_EE_REG_DELAY    0x05 /* Time Delay (0 – 255 ms) (default: 1) */
-#define HMC6352_EE_REG_MEASURES 0x06 /* Number of Summed measurements(1-16) (default: 0x04)*/
-#define HMC6352_EE_REG_VERSION  0x07 /* Software Version Number*/
-#define HMC6352_EE_REG_OPMODE   0x08 /* Operation Mode Byte   (default: 0x50) */
+#define HMC6352_EE_REG_ADDRESS  0x00 /*! I2C Slave Address - 0x42 */
+#define HMC6352_EE_REG_XOFF_MSB 0x01 /*! Magnetometer X Offset MSB */
+#define HMC6352_EE_REG_XOFF_LSB 0x02 /*! Magnetometer X Offset LSB */
+#define HMC6352_EE_REG_YOFF_MSB 0x03 /*! Magnetometer Y Offset MSB */
+#define HMC6352_EE_REG_YOFF_LSB 0x04 /*! Magnetometer Y Offset LSB */
+#define HMC6352_EE_REG_DELAY    0x05 /*! Time Delay (0 – 255 ms) (default: 1) */
+#define HMC6352_EE_REG_MEASURES 0x06 /*! Number of Summed measurements(1-16) (default: 0x04)*/
+#define HMC6352_EE_REG_VERSION  0x07 /*! Software Version Number*/
+#define HMC6352_EE_REG_OPMODE   0x08 /*! Operation Mode Byte   (default: 0x50) */
 
-// ID
-#define HMC6352_ID 0x42
+#define HMC6352_ID 0x42 ///< ID
 
 // RAM REGS
-#define HMC6352_RAM_REG_OUTMODE   0x4e /* Output data mode */
-#define HMC6352_RAM_REG_OPMODE    0x74 /* Operational mode - Shadowed in EEPROM 0x08 */
+#define HMC6352_RAM_REG_OUTMODE   0x4e /*! Output data mode */
+#define HMC6352_RAM_REG_OPMODE    0x74 /*! Operational mode - Shadowed in EEPROM 0x08 */
 
 // OPERATION MODE CONFIG
 
 // The rest should be set to 0
-#define HMC6352_REG_OPMODE_FREQ_MASK  0x60 /* Frequency selection in continuous mode */
-#define HMC6352_REG_OPMODE_RESET_MASK 0x10 /* Periodic Set/Reset ON/OFF*/
-#define HMC6352_REG_OPMODE_OP_MASK    0x03 /* Operation mode */
+#define HMC6352_REG_OPMODE_FREQ_MASK  0x60 /*! Frequency selection in continuous mode */
+#define HMC6352_REG_OPMODE_RESET_MASK 0x10 /*! Periodic Set/Reset ON/OFF*/
+#define HMC6352_REG_OPMODE_OP_MASK    0x03 /*! Operation mode */
 
 #define HMC6352_REG_OPMODE_FREQ_1HZ   0x00
 #define HMC6352_REG_OPMODE_FREQ_5HZ   0x20
@@ -64,9 +74,9 @@
 #define HMC6352_RAM_REG_OUTMODE_Y       0x04
 
 typedef struct{
-    I2CDEV* i2c; // Pointing to the bus where the HMC6352 is plugged
-    uint8_t address; // i2c address where the HMC6352 is located
-    RT_MUTEX mutex; 
+    I2CDEV* i2c; ///< Pointing to the bus where the HMC6352 is plugged
+    uint8_t address; ///< I2C address where the HMC6352 is located
+    RT_MUTEX mutex; ///< Xenomai MUTEX
 } HMC6352;
 
 int hmc6532_init(HMC6352* compass, I2CDEV* i2c, uint8_t address);

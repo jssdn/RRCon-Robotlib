@@ -1,13 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-
-    Code: lcd.c High Level 16x2 LCD functions for a 4bit interface
-	        
-    License: Licensed under GPL2.0 
-
-    Copyright (C) Jorge Sánchez de Nova
+/**
+    @file lcd.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief High Level 16x2 LCD functions for a 4bit interface
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+ 
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -22,7 +25,11 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     
-*  ******************************************************************************* **/
+    @note See application note AN2381 ST 
+
+    @version 0.4-Xenomai       
+    
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,14 +50,19 @@
 #include "util.h"
 
 /**
- Low-level functions
- **/ 
+* @brief Send data in two times in 4 bit mode
+*
+* @param lcd LCD device to use
+* @return 0 on success. Otherwise error. 
+*
+* Send data in two times in 4 bit mode
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
-/* 
- *    lcd_data_latch : latch data into the lcd by toggling the enable
- */ 
-
-int lcd_data_latch(LCD* lcd, char rs, char data4b)
+static int lcd_data_latch(LCD* lcd, char rs, char data4b)
 {
     int err; 
  
@@ -70,6 +82,19 @@ int lcd_data_latch(LCD* lcd, char rs, char data4b)
 /* 
  *   lcd_send_data_4bit : Send data in two times in 4 bit mode
  */ 
+
+/**
+* @brief Send data in two times in 4 bit mode
+*
+* @param lcd LCD device to use
+* @return 0 on success. Otherwise error. 
+*
+* Send data in two times in 4 bit mode
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 int lcd_send_data_4bit(LCD* lcd, char rs, char data) 
 {
@@ -93,6 +118,19 @@ int lcd_send_data_4bit(LCD* lcd, char rs, char data)
     return err2; 
 }
 
+/**
+* @brief Send 4bit command
+*
+* @param lcd LCD device to use
+* @return 0 on success. Otherwise error. 
+*
+* Send only a nibble( for special commands )
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 /* 
  *   lcd_send_nibble: Send only a nibble( for special commands )
  */ 
@@ -115,19 +153,54 @@ int lcd_send_nibble(LCD* lcd, char rs, char data)
     return err2; 
 }
 
-/** 
- *  High level simplifications for using the LCD
- **/
+/**
+* @brief Turns on the LCD screen
+*
+* @param lcd LCD device to use
+* @return 0 on success. Otherwise error. 
+*
+* High level simplifications for using the LCD
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 inline int lcd_on(LCD* lcd)
 {
     return lcd_send_data_4bit(lcd, 0, LCD_ON); 
 }
 
+/**
+* @brief Turns off the LCD screen
+*
+* @param lcd LCD device to use
+* @return 0 on success. Otherwise error. 
+*
+* High level simplifications for using the LCD
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 inline int lcd_off(LCD* lcd)
 {
     return lcd_send_data_4bit(lcd, 0, LCD_OFF); 
 }
+
+/**
+* @brief Clears the LCD screen
+*
+* @param lcd LCD device to use
+* @return 0 on success. Otherwise error. 
+*
+* High level simplifications for using the LCD
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 inline int lcd_clear(LCD* lcd)
 {
@@ -139,9 +212,16 @@ inline int lcd_clear(LCD* lcd)
   return 0; 
 }
 
-/* 
- *   lcd_init: Inits the lcd in 4bit mode
- */ 
+/**
+* @brief Inits the lcd in 4bit mode
+*
+* @param lcd LCD device to use
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int lcd_init(LCD* lcd)
 {
@@ -204,6 +284,17 @@ int lcd_init(LCD* lcd)
     return 0; 
 }
 
+/**
+* @brief Cleans the lcd device structure 
+*
+* @param lcd LCD device to clean
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int lcd_clean(LCD* lcd)
 {
     int err; 
@@ -214,6 +305,20 @@ int lcd_clean(LCD* lcd)
     
     return 0; 
 }
+
+/**
+* @brief Writes a string into the 16x2 LCD 
+*
+* @param lcd LCD device to use
+* @param msg Message to send 
+* @return 0 on success. Otherwise error. 
+*
+* Writes a string into the 16x2 LCD by splitting it between the two lines
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int lcd_print(LCD* lcd, const char *msg)
 {

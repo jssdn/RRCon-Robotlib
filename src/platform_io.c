@@ -1,13 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-
-    Code: platform_io.c Specific high-level functions for the control of 
-	                the gpio peripherals in the RRcon Platform
-    License: Licensed under GPL2.0 
-
-    Copyright (C) Jorge Sánchez de Nova
+/**
+    @file platform_io.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Specific high-level functions for the control of the GPIO peripherals in the RRcon Platform
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+ 
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -21,8 +24,12 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @note Interrupts not operational due to limitations in gpio.c
 
-*  ******************************************************************************* **/
+    @version 0.4-Xenomai       
+    
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +51,19 @@ GPIO pio_geninputs; // Buttons / BUMPERS / ADC EOC / ACC_INT
 GPIO pio_genoutputs; // LEDS4 / LEDs_Position
 GPIO pio_fpgagpio; // 8 general purpouse bidirectional signals
 
+/**
+* @brief Wrapper for General Inputs GPIO initialization
+*
+* @param fisr Pointer to the Interrupt Service Routine (NULL if no interrupt support)
+* @return 0 on success. Otherwise error. 
+*
+* Initializes the General Inputs GPIO peripheral
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int pio_init_geninputs(void (*fisr)(void*))
 {
     int err; 
@@ -56,6 +76,18 @@ int pio_init_geninputs(void (*fisr)(void*))
     
     return err; 
 }
+
+/**
+* @brief Wrapper for General Outputs GPIO initialization
+*
+* @return 0 on success. Otherwise error. 
+*
+* Initializes the General Outputs GPIO peripheral
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int pio_init_genoutputs()
 {
@@ -70,6 +102,19 @@ int pio_init_genoutputs()
     return err; 
 }
 
+/**
+* @brief Wrapper for General Inputs GPIO initialization
+*
+* @param fisr Pointer to the Interrupt Service Routine (NULL if no interrupt support)
+* @return 0 on success. Otherwise error. 
+*
+* Initializes the FPGA-GPIO peripheral
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int pio_init_fpgagpio(void (*fisr)(void*))
 {
     int err;
@@ -82,6 +127,20 @@ int pio_init_fpgagpio(void (*fisr)(void*))
 
     return err; 
 }
+
+/**
+* @brief Wrapper for all plataform IO initialization
+*
+* @param isr_ginputs Pointer to the Interrupt Service Routine for the General Inputs peripheral (NULL if no interrupt support)
+* @param isr_fpga Pointer to the Interrupt Service Routine for the GPIO-FPGA peripheral (NULL if no interrupt support)
+* @return 0 on success. Otherwise error. 
+*
+* Initializes the General Inputs, General Outputs and FPGA-GPIO peripherals
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int pio_init_all(void (*isr_ginputs)(void*), void (*isr_fpga)(void*))
 {
@@ -110,6 +169,18 @@ uninit_any:
     return res;
 }
 
+/**
+* @brief Wrapper for all plataform IO cleaning
+*
+* @return 0 on success. Otherwise error. 
+*
+* Cleans the General Inputs, General Outputs and FPGA-GPIO peripherals
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int pio_clean_all()
 {
     int res; 
@@ -135,61 +206,101 @@ uncleaned_gout:
    return res; 
 }
 
-/* Helpful easy-to-read high-level functions for gpio device read */
+/**
+* @brief Write to the 4 led bar
+* 
+* @param value Value to write ( 0x0 - 0xf )
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
-/* LED BAR 4 bits */
 inline int pio_write_leds4(unsigned value)
 {
      return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LED4_MASK, GENERAL_OUTPUTS_LED4_SHIFT, 0, value);
 }
 
-/* ARROW POSITION LEDS */
-/*
-    Bits: 
-		UP
-		|
-		5
-		
-	Left-2	|1|  4-Right	
-              Center
-		3
-		|
-		Down
+/**
+* @brief Write to the arrow positions leds
+* 
+* @param value Value to write ( 0x0 - 0x1f )
+* @return 0 on success. Otherwise error. 
+*
+* @note Center ( bit 0 ) / Left ( 2 ) / Down ( 3 ) / Right ( 4 ) / Up ( 5 )
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
 */
+
 inline int pio_write_ledspos(unsigned value)
 {
     return gpio_write(&pio_genoutputs, GENERAL_OUTPUTS_LEDPOS_MASK, GENERAL_OUTPUTS_LEDPOS_SHIFT, 0, value);
 }
 
-/* ARROW POSITION BUTTONS */
-/*
-    Bits: 
-		UP
-		|
-		5
-		
-	Left-2	|1|  4-Right	
-              Center
-		3
-		|
-		Down
+/**
+* @brief Read from the arrow positions buttons
+* 
+* @param value Read value
+* @return 0 on success. Otherwise error. 
+*
+* @note Center ( bit 0 ) / Left ( 2 ) / Down ( 3 ) / Right ( 4 ) / Up ( 5 )
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
 */
+
 inline int pio_read_buttons(unsigned* ret)
 {
     return gpio_read(&pio_geninputs, GENERAL_INPUTS_PUSHBUT_MASK,GENERAL_INPUTS_PUSHBUT_SHIFT, 0, ret);        
 }
+
+/**
+* @brief Read from the bumpers
+* 
+* @param ret Read value
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 inline int pio_read_bumpers(unsigned* ret)
 {
     return gpio_read(&pio_geninputs, GENERAL_INPUTS_BUMPERS_MASK,GENERAL_INPUTS_BUMPERS_SHIFT, 0, ret);        
 }
 
-/* FPGA_GPIO8 */
+/**
+* @brief Read from the FPGA-GPIO port
+* 
+* @param ret Read value
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 inline int pio_read_fpgagpio(unsigned* ret)
 {
 //     return gpio_read(&pio_fpgagpio, FPGA_GPIO8_MASK,0, 0, ret);
     return 0;
 }
+
+/**
+* @brief Write to the FPGA-GPIO port
+* 
+* @param value Data to write into the port
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 inline int pio_write_fpgagpio(unsigned value)
 {
@@ -203,12 +314,24 @@ inline int pio_write_fpgagpio_tristate(unsigned value)
     return 0;
 }
 
-/* Unsafe access functions for muxed IOs */
-//TODO: REMOVE! Unsafe functions
+/**
+* @brief Unsafe access functions for muxed IO
+* 
+* @note This functions will be removed quickly
+*
+*/ 
+
 inline int pio_write_go_all(unsigned value,unsigned off)
 {
     return gpio_write(&pio_genoutputs, ~0,0, off, value);
 }
+
+/**
+* @brief Unsafe access functions for muxed IO
+* 
+* @note This functions will be removed quickly
+*
+*/ 
 
 inline int pio_read_gi_all(unsigned *ret,unsigned off)
 {

@@ -1,16 +1,27 @@
+/**
+    @file motors.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief [HEADER] Functions for the basic DC motor control with quadrature enconder
+    
+*/
+
 #ifndef __OPENLOOP_MOTORS__H__
 #define __OPENLOOP_MOTORS__H__
 
 typedef struct{
-    unsigned freq_div; 
-    unsigned speed; 
-    RT_MUTEX mutex;
+    unsigned freq_div; ///< Current divider applied to the carrier signal
+    unsigned speed; ///< Current duty cycle applied
+    RT_MUTEX mutex; ///< Xenomai Mutex
 } PWM; 
 
 typedef struct{   
-    int qenc_value; // Value in T
-    int qenc_prev_value; // Value in T+1 
-    RT_MUTEX mutex;
+    int qenc_value; ///< Value in T
+    int qenc_prev_value; ///< Value in T+1 
+    RT_MUTEX mutex; ///< Xenomai Mutex
 } QENC; 
 
 typedef struct{    
@@ -21,22 +32,21 @@ typedef struct{
 } PID; 
 
 typedef struct{
-    volatile int* madd; 
-    unsigned long madd_base; 
-    unsigned long madd_end; 
-    unsigned num_of_motors;
-    volatile int* qadd;
-    unsigned long qadd_base; 
-    unsigned long qadd_end; 
-    unsigned num_of_encs;
-    volatile int* padd;      
-    unsigned long padd_base; 
-    unsigned long padd_end; 
-    unsigned num_of_pids;
-    // Dynamically allocated array for the arbitrary number of motors that the core can handle 
-    PWM* pwms; // array of structs
-    QENC* encoders; // array of structs
-    PID* pids; // array of structs
+    volatile int* madd; ///< Virtual mapped address
+    unsigned long madd_base;  ///< Base physical address
+    unsigned long madd_end; ///< End physical address
+    unsigned num_of_motors; ///< Number of motors connected
+    volatile int* qadd; ///< Virtual mapped address
+    unsigned long qadd_base; ///< Base physical address
+    unsigned long qadd_end; ///< End physical address
+    unsigned num_of_encs; ///< End physical address
+    volatile int* padd; ///< Virtual mapped address     
+    unsigned long padd_base; ///< Base physical address
+    unsigned long padd_end; ///< End physical address
+    unsigned num_of_pids; ///< End physical address    
+    PWM* pwms; ///< Array of PWM device structures
+    QENC* encoders; ///< Array of QENC device structures
+    PID* pids; ///< Array of PID device structures
 } MOTOR; 
 
 

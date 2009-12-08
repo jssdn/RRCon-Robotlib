@@ -1,3 +1,14 @@
+/**
+    @file srf08.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief [HEADER] Driver for SRF08 I2C Sonars
+    
+*/
+
 #ifndef __SRF08_H__
 #define __SRF08_H__
 
@@ -43,25 +54,25 @@
 
 // ININTELLIGIBLE REGSsrf08_fire // function
 
-#define SRF08_REG_CMD 0x00     /* Command register */
-#define SRF08_REG_REV 0x00     /* Software revision register */
+#define SRF08_REG_CMD 0x00     /*! Command register */
+#define SRF08_REG_REV 0x00     /*! Software revision register */
 
-#define SRF08_REG_LIGHT   0x01 /* Light Sensor register */
-#define SRF08_REG_MAXGAIN 0x01 /* Maximum gain register */
+#define SRF08_REG_LIGHT   0x01 /*! Light Sensor register */
+#define SRF08_REG_MAXGAIN 0x01 /*! Maximum gain register */
 
-#define SRF08_REG_RANGE 0x02   /* Range register */
+#define SRF08_REG_RANGE 0x02   /*! Range register */
 /* Echos */
-#define SRF08_REG_1STECHO_HIGH 0x02  /* 1st echo high byte */
-#define SRF08_REG_1STECHO_LOW 0x03   /* 1st echo high byte */
+#define SRF08_REG_1STECHO_HIGH 0x02  /*! 1st echo high byte */
+#define SRF08_REG_1STECHO_LOW 0x03   /*! 1st echo high byte */
 
-#define SRF08_REG_2NDECHO_HIGH 0x04  /* 1st echo high byte */
-#define SRF08_REG_2NDECHO_LOW 0x05   /* 1st echo high byte */
+#define SRF08_REG_2NDECHO_HIGH 0x04  /*! 2nd echo high byte */
+#define SRF08_REG_2NDECHO_LOW 0x05   /*! 2nd echo high byte */
 
-#define SRF08_REG_3RDECHO_HIGH 0x06  /* 1st echo high byte */
-#define SRF08_REG_3RDECHO_LOW 0x07   /* 1st echo high byte */
+#define SRF08_REG_3RDECHO_HIGH 0x06  /*! 3rd echo high byte */
+#define SRF08_REG_3RDECHO_LOW 0x07   /*! 3rd echo high byte */
 /* The rest of the echo regs go up to the 17th echo in pairs of two */
-#define SRF08_REG_17THECHO_HIGH 0x22 /* 1th echo high byte */
-#define SRF08_REG_17THECHO_LOW 0x23  /* 1th echo high byte */
+#define SRF08_REG_17THECHO_HIGH 0x22 /*! 17th echo high byte */
+#define SRF08_REG_17THECHO_LOW 0x23  /*! 17th echo high byte */
 
 //commands 
 
@@ -99,10 +110,10 @@
         __usleep(65000)
 
 typedef struct{
-    I2CDEV* i2c; /* I2C device where the sensor is attached */
-    uint8_t address; /* I2C bus address */
+    I2CDEV* i2c; /*! I2C device where the sensor is attached */
+    uint8_t address; /*! I2C bus address */
 //     int16_t readings[17];    
-    RT_MUTEX mutex;  /* Mutex */
+    RT_MUTEX mutex;  /*! Mutex */
 } SRF08; 
     
 int srf08_init(SRF08* sonar,I2CDEV* i2c, uint8_t address);

@@ -1,3 +1,14 @@
+/**
+    @file gp2x.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Conversion tables for IR analog rangers GP2x 
+    
+*/
+
 #ifndef __GP2DX_H__
 #define __GP2DX_H__
 

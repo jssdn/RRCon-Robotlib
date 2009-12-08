@@ -1,3 +1,14 @@
+/**
+    @file hwservos.h
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Servo interface for hardware RC servo core controller
+    
+*/
+
 #ifndef __HWSERVOS__H__
 #define __HWSERVOS__H__
 
@@ -5,11 +16,11 @@
 #include <native/mutex.h>
 
 typedef struct{
-    unsigned long base_add; 	// Physical memory address where to map the device  (beginning)
-    unsigned long end_add;      // Physical memory address where to map the device (end)
-    volatile int* vadd;         // virtual address where device is mapped
-    unsigned* values;		//Latched values of the Servos. Allocated during initialization
-    unsigned num_of; 		//Number of servos in device
+    unsigned long base_add; 	///< Physical memory address where to map the device  (beginning)
+    unsigned long end_add;      ///< Physical memory address where to map the device (end)
+    volatile int* vadd;         ///< virtual address where device is mapped
+    unsigned* values;		///< Latched values of the Servos. Allocated during initialization
+    unsigned num_of; 		///< Number of servos in device
     RT_MUTEX mutex; 
 } HWSERVOS; 
 

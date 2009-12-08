@@ -1,14 +1,17 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author: Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
-            Based in code from the Linux Kernel Documentation 
-
-    Code: xspidev.c SPIDEV primitive functions (full/half duplex)
-
-    License: Licensed under GPL2.0 
+/**
+    @file xspidev.c
     
-    Copyright (C) Jorge Sánchez de Nova
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief SPIDEV primitive functions (full/half duplex)
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+    @note Based in code from the Linux Kernel Documentation 
+    
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -22,8 +25,10 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @version 0.4-Xenomai
 
-*  ******************************************************************************* **/
+*/
 
 #include <stdint.h>
 #include <unistd.h>
@@ -39,7 +44,19 @@
 #include "xspidev.h"
 #include "util.h" 
 
-/* Not thread-safe */
+/**
+* @brief Applies given config to the SPI device
+*
+* @param spi SPI device to use ( with SPIDEV support ) 
+* @return 0 on success. Otherwise error. 
+*
+* Applies configuration for speed, mode and bits per word
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 static int spi_set_config(XSPIDEV* xspi)
 {
     int err; 
@@ -77,6 +94,30 @@ static int spi_set_config(XSPIDEV* xspi)
     
     return 0;
 }
+
+/**
+* @brief Initializes a SPI Device
+*
+* @param spi SPI device to use ( with SPIDEV support ) 
+* @param devname SPIDEV device name ( e.g. /dev/spi0 )
+* @param speed Speed in HZ. Set to 0 for defaults.
+* @param delay Delay in ?? Set to 0 for defaults.
+* @param bits Bits at a time. Set to 0 for defaults.
+* @param loop Loopback mode. Set to 0 for defaults.
+* @param cpha CPHA. Set to 0 for defaults.
+* @param cpol CPOL. Set to 0 for defaults.
+* @param lsb_first LSB first? Set to 0 for defaults.
+* @param cs_high CS high? Set to 0 for defaults.
+* @param spi_3wire 3 wire spi mode? Set to 0 for defaults.
+* @return 0 on success. Otherwise error. 
+*
+* Initialized a SPI device with the given parameters. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 
 int spi_init(	XSPIDEV* xspi, // STRUCT TO CONFIGURE
 		const char* devname, // DEVICE NAME 
@@ -122,6 +163,19 @@ int spi_init(	XSPIDEV* xspi, // STRUCT TO CONFIGURE
     return spi_set_config(xspi);     
 }
 
+/**
+* @brief Cleans a SPI Device
+*
+* @param spi SPI device to clean
+* @return 0 on success. Otherwise error. 
+*
+* Initialized a SPI device with the given parameters. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int spi_clean(XSPIDEV* xspi)
 {
     int err; 
@@ -130,6 +184,24 @@ int spi_clean(XSPIDEV* xspi)
     
     return 0; 
 }
+
+/**
+* @brief Full duplex transfer for SPI Device
+*
+* @param spi SPI device
+* @param tx Preallocated transfer array of length len
+* @param rx Preallocated reception array of length len
+* @param len Length of the arrays
+* @return 0 on success. Otherwise error. 
+*
+* Full duplex tx/rx
+*
+* @note No sanity check over the arrays. Should be checked externally.
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking.
+*
+*/
 
 int spi_full_transfer(XSPIDEV* xspi, uint8_t* tx, uint8_t* rx, int len)
 {
@@ -167,6 +239,23 @@ int spi_full_transfer(XSPIDEV* xspi, uint8_t* tx, uint8_t* rx, int len)
     return 0; 	
 }
 
+/**
+* @brief Half duplex transfer for SPI Device
+*
+* @param spi SPI device
+* @param data Preallocated transfer array of length len
+* @param len Length of the array
+* @return 0 on success. Otherwise error. 
+*
+* @note No sanity check over the arrays. Should be checked externally.
+*
+* Half dupplex transfer
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking.
+*
+*/
+
 int spi_half_transfer( XSPIDEV* xspi, uint8_t* data, int len ) 
 {
     int err; 
@@ -184,6 +273,23 @@ int spi_half_transfer( XSPIDEV* xspi, uint8_t* data, int len )
     
     return err; // written bytes
 }
+
+/**
+* @brief Half duplex read from SPI Device
+*
+* @param spi SPI device
+* @param data Preallocated reception array of length len
+* @param len Length of the array
+* @return 0 on success. Otherwise error. 
+*
+* @note No sanity check over the size of the array. Should be checked externally.
+*
+* Half dupplex reception
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking.
+*
+*/
 
 int spi_half_read( XSPIDEV* xspi , uint8_t* data, int len ) 
 {

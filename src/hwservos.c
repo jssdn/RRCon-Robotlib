@@ -1,11 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-
-    Code: hwservos.c Servo interface for hardware servo core controller
-    License: Licensed under GPL2.0     
-
+/**
+    @file hwservos.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Servo interface for hardware RC servo core controller
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+ 
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -19,8 +24,10 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-*  ******************************************************************************* **/
+    
+    @version 0.4-Xenomai
+    
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +45,22 @@
 #include "busio.h"
 #include "util.h"
 #include "hwservos.h"
+
+/**
+* @brief Initialization for Servo IP Core device data structure. 
+*
+* @param servo Servo IP core peripheral to init
+* @param base_add Physical base IO address of peripheral
+* @param end_add Physical final IO address of peripheral
+* @param num_of Number of active servos in Core
+* @return 0 on success. Otherwise error. 
+*
+* Maps IO region, set flags and init mutex.
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int hwservos_init(HWSERVOS* servo, unsigned long base_add, unsigned long end_add, unsigned num_of)
 {
@@ -68,6 +91,19 @@ int hwservos_init(HWSERVOS* servo, unsigned long base_add, unsigned long end_add
     return 0;
 }
 
+/**
+* @brief Clean the Servo IP Core device data structure. 
+*
+* @param servo Servo IP core peripheral to init
+* @return 0 on success. Otherwise error. 
+*
+* Unmaps IO region, and clean mutex.
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int hwservos_clean(HWSERVOS* servo)
 {
     int err,i;
@@ -93,6 +129,24 @@ int hwservos_clean(HWSERVOS* servo)
     return 0;    
 }
 
+/**
+* @brief Sets control to a certain angle
+*
+* @param servo Servo IP core peripheral to init
+* @param num Servo to interact with
+* @param value Time in us that will be applied to the servos
+* @return 0 on success. Otherwise error. 
+*
+* Control stays active if no other order is performed. 
+*
+* @note There is a hard and a soft sanity check over the value. If time in us is over or under the thresholds the servo can be 
+* 	physically damaged. 
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
+
 int hwservos_set_pos(HWSERVOS* servo, unsigned num, unsigned value)
 {
     int err; 
@@ -113,7 +167,20 @@ int hwservos_set_pos(HWSERVOS* servo, unsigned num, unsigned value)
     return 0;
 }
 
-/* NOTE: Returned value IS NOT BASED IN HW feedback, but in latched values */
+/**
+* @brief Gets the set point for the Servo
+*
+* @param servo Servo IP core peripheral to init
+* @param num Servo to interact with
+* @param ret Time in us that is being applied to the servos
+* @return 0 on success. Otherwise error. 
+*
+* @note Returned value IS NOT BASED IN HW feedback, but in latched values
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int hwservos_get_pos(HWSERVOS* servo, unsigned num, unsigned* ret)
 {
     int err; 
@@ -127,6 +194,20 @@ int hwservos_get_pos(HWSERVOS* servo, unsigned num, unsigned* ret)
     return 0;
 }
 
+/**
+* @brief Enable active the control independently
+*
+* @param servo Servo IP core peripheral to init
+* @param num Servo to interact with
+* @return 0 on success. Otherwise error. 
+*
+* Control stays active if no other order is performed. By enabling it, you force the system to find the set point continously.
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int hwservos_enable(HWSERVOS* servo, unsigned num)
 {    
     int err;
@@ -139,6 +220,21 @@ int hwservos_enable(HWSERVOS* servo, unsigned num)
     
     return 0;
 }
+
+/**
+* @brief Disable active the control independently
+*
+* @param servo Servo IP core peripheral to init
+* @param num Servo to interact with
+* @return 0 on success. Otherwise error. 
+*
+* Control stays active if no other order is performed. By disabling it, no internal force will be applied to the servo to find 
+* the set point.
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 int hwservos_disable(HWSERVOS* servo, unsigned num)
 {

@@ -1,13 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-
-    Code: util.c Auxiliary and debug functions 
-	        
-    License: Licensed under GPL2.0 
-
-    Copyright (C) Jorge Sánchez de Nova
+/**
+    @file util.c 
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Auxiliary and debug functions 
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+    
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -22,7 +25,9 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     
-*  ******************************************************************************* **/
+    @version 0.4-Xenomai
+
+*/
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -30,6 +35,16 @@
 
 #include "util.h"
 #include "version.h" 
+
+/**
+* @brief Initialization for the I2C device
+*
+* @param msg Debug level: @see util.h
+* @param fmt Formatted string 
+*
+* Wrapper for printf debugging with debug level support
+*
+*/
 
 // Hint for the compiler to optimize this function when not used 
 #if DBG_LEVEL != 0
@@ -54,12 +69,26 @@ inline void util_pdbg(int msg, char *fmt, ...)
    #endif
 }
 
+/**
+* @brief Simple timestamp printing
+*
+* Timestamp printing through localtime()
+*
+*/
+
 void print_timestamp()  
 {  
      time_t ltime;     /* calendar time */  
      ltime=time(NULL); /* get current cal time */  
      printf("%s",asctime( localtime(&ltime) ) );  
 }  
+
+/**
+* @brief Library banner printing
+*
+* Simple banner printing for versioning, authoring and release notes.
+*
+*/
 
 void print_banner()
 {
@@ -70,6 +99,15 @@ void print_banner()
     util_pdbg(DBG_INFO, "------------------------------------------------------------\n");
 }
 
+/**
+* @brief Sleep miliseconds
+*
+* @param t Time in ms
+*
+* Sleep in milisecond through nanosleep() call 
+*
+*/
+
 void __msleep(long t)
 {
 	struct timespec ts = {
@@ -79,6 +117,15 @@ void __msleep(long t)
 	nanosleep(&ts,NULL);
 }
 
+/**
+* @brief Sleep microseconds
+*
+* @param t Time in us
+*
+* Sleep in microsecond through nanosleep() call 
+*
+*/
+
 void __usleep(long long t)
 {
 	struct timespec ts = {
@@ -87,6 +134,15 @@ void __usleep(long long t)
 	};	
 	nanosleep(&ts,NULL);
 }
+
+/**
+* @brief Sleep nanoseconds
+*
+* @param t Time in us
+*
+* Sleep in nanoseconds through nanosleep() call 
+*
+*/
 
 void __nanosleep(long long t)
 {

@@ -1,11 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-
-    Code: gpio.c Functions for the Xilinx XPS GPIO cores in userspace with IRQ support.
-    License: Licensed under GPL2.0 
-
+/**
+    @file gpio.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Functions for the Xilinx XPS GPIO cores in userspace with IRQ support.
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+ 
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -19,9 +24,11 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @version 0.4-Xenomai
 
-    NOTE: Userspace HW IRQs need improvements...
-*  ******************************************************************************* **/
+    @note Userspace HW IRQs need improvements...
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,20 +51,23 @@
 #include "dev_mmaps_parms.h"
 #include "gpio.h"
 #include "util.h"
-// 
 
-/*TODO: 
-    GPIO as input -> writing to IO doesn't make any effect
-    GPIO as ouput -> reading from IO doesn't make any effect
-*/
 
 //TODO: Non-blocking write functions
 
-/*
-    Writes to GPIO device
-    gpio-> Gpio device
-    offset-> Offset to the address in the gpio
-    value-> Value to write
+/**
+* @brief Writes to GPIO device overwritting any existing value
+* 
+* @param gpio Initialized GPIO device 
+* @param offset Offset over the base address. Typically 0 - Data 1 - Tri-state
+* @param value Data value
+* @return 0 on success. Otherwise error. 
+*
+* By writing directly to the memory we save the access cycles use in reading from the bus.
+* In addition no masked/shifting is performed. Useful when IOs are not muxed.
+*
+* @note This function is \b thread-safe and prevents multiple simultaneous access
+* @note This function is \b blocking
 */
 
 int gpio_fast_write(GPIO* gpio, unsigned offset, unsigned value)
@@ -73,12 +83,20 @@ int gpio_fast_write(GPIO* gpio, unsigned offset, unsigned value)
     return 0; 
 }
 
-/*
-    Writes to GPIO device
-    gpio-> Gpio device
-    offset-> Offset to the address in the gpio(set to 0 if writing directly to IO is desired)
-    ret-> return value
+/**
+* @brief Reads GPIO device overwritting any existing value
+* 
+* @param gpio Initialized GPIO device 
+* @param offset Offset over the base address. Typically 0 - Data 1 - Tri-state
+* @param ret Read value
+* @return 0 on success. Otherwise error. 
+*
+* By doing a fast read there is no need to do any shifting/masking as in muxed GPIOs, resulting in a faster process. 
+*
+* @note This function is \b thread-safe and prevents multiple simultaneous access
+* @note This function is \b blocking
 */
+
 int gpio_fast_read(GPIO* gpio, unsigned offset, unsigned* ret)
 {
     int err; 
@@ -92,14 +110,23 @@ int gpio_fast_read(GPIO* gpio, unsigned offset, unsigned* ret)
     return 0; 
 }
 
-/*
-    Writes to GPIO device
-    gpio-> Gpio device
-    mask-> Mask for muxed gpios
-    shift-> Shift for muxed gpios
-    offset-> Offset to the address in the gpio
-    value-> Value to write
+/**
+* @brief Writes GPIO device
+* 
+* @param gpio Initialized GPIO device 
+* @param mask Mask to select only bits of interest (muxed GPIOs)
+* @param shift Shift applied to bits of interest (muxed GPIOs)
+* @param offset Offset over the base address. Typically 0 - Data 1 - Tri-state
+* @param value Data value 
+* @return 0 on success. Otherwise error. 
+*
+* By doing a fast read there is no need to do any shifting/masking as in muxed GPIOs, resulting in a faster process. 
+*
+* @note This function is \b thread-safe and prevents multiple simultaneous access
+* @note This function is \b blocking
+*
 */
+
 int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsigned value)
 {
     int err; 
@@ -113,14 +140,23 @@ int gpio_write(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsig
     return 0; 
 }
 
-/*
-    Writes to GPIO device
-    gpio-> Gpio device
-    mask-> Mask for muxed gpios(set to all ones if not muxed (~0))
-    shift-> Shift for muxed gpios(set to 0 if not muxed)
-    offset-> Offset to the address in the gpio(set to 0 if writing directly to IO is desired)
-    ret-> return value
+/**
+* @brief Reads GPIO device
+* 
+* @param gpio Initialized GPIO device 
+* @param mask Mask to select only bits of interest (muxed GPIOs)
+* @param shift Shift applied to bits of interest (muxed GPIOs)
+* @param offset Offset over the base address. Typically 0 - Data 1 - Tri-state
+* @param ret Read value 
+* @return 0 on success. Otherwise error. 
+*
+* Reads from GPIO a selected set of bits
+*
+* @note This function is \b thread-safe and prevents multiple simultaneous access
+* @note This function is \b blocking
+*
 */
+
 int gpio_read(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsigned* ret)
 {
     int err; 
@@ -135,18 +171,49 @@ int gpio_read(GPIO* gpio, unsigned mask, unsigned shift, unsigned offset, unsign
 }
 
 
-/* Quick functions for IRQ handling inside the device */
+/**
+* @brief Enable Global Interrupts
+*
+* @param gpio Initialized GPIO device 
+* @return 0 on success. Otherwise error. 
+*
+*  Quick functions for IRQ handling inside the device
+*
+*/
+
 int gpio_irq_enable_global(GPIO* gpio)
 {
     return gpio_write(gpio, ~0x0, 0, GPIO_GIE_OFFSET , GPIO_GIE_MASK);
 }
+
+/**
+* @brief Disable Global Interrupts
+*
+* @param gpio Initialized GPIO device 
+* @return 0 on success. Otherwise error. 
+*
+* Quick functions for IRQ handling inside the device
+*
+*/
 
 int gpio_irq_disable_global(GPIO* gpio)
 {
     return gpio_write(gpio, ~0x0, 0, GPIO_GIE_OFFSET , 0x0);
 }
 
-/* By default assumes n = 1 */
+/**
+* @brief Enable Interrupt on channel 
+*
+* @param gpio Initialized GPIO device 
+* @param n Channel number (1,2)
+* @return 0 on success. Otherwise error. 
+*
+* Quick functions for IRQ handling inside the device
+*
+* @note Currently it assumes n = 1 until support for two channel GPIO is added
+*
+*/
+
 int gpio_irq_enable_channel(GPIO* gpio,int n)
 {
     int err; 
@@ -162,7 +229,19 @@ int gpio_irq_enable_channel(GPIO* gpio,int n)
     return gpio_write(gpio, ~0x0, 0, GPIO_IER_OFFSET , ret | GPIO_IER_CHANNEL1_MASK);
 }
 
-/* By default assumes n = 1 */
+/**
+* @brief Disable Interrupt on channel
+*
+* @param gpio Initialized GPIO device 
+* @param n Channel number (1,2)
+* @return 0 on success. Otherwise error. 
+*
+* Quick functions for IRQ handling inside the device
+*
+* @note Currently it assumes n = 1 until support for two channel GPIO is added
+*
+*/
+
 int gpio_irq_disble_channel(GPIO* gpio,int n)
 {
     int err; 
@@ -178,10 +257,19 @@ int gpio_irq_disble_channel(GPIO* gpio,int n)
     return gpio_write(gpio, ~0x0, 0, GPIO_IER_OFFSET , ret & GPIO_IER_CHANNEL2_MASK);
 }
 
-/* 
-   Reads and toggles the Interrupt Status Register 
-   Toggling is performed by writing 1 into the ISR
+/**
+* @brief Reads and toggles the Interrupt Status Register 
+*
+* @param gpio Initialized GPIO device 
+* @param n Channel number (1,2)
+* @return 0 on success. Otherwise error. 
+*
+* Quick functions for IRQ handling inside the device
+*
+* @note Toggling is performed by writing 1 into the ISR
+*
 */
+
 int gpio_irq_isr_checkandtoggle_channel(GPIO* gpio,int n, unsigned* ret )
 {
     int err; 
@@ -192,9 +280,27 @@ int gpio_irq_isr_checkandtoggle_channel(GPIO* gpio,int n, unsigned* ret )
     return gpio_write(gpio, ~0x0, 0, GPIO_IER_OFFSET , *ret);    
 }
 
+/**
+* @brief Initialization for GPIO data structure. 
+*
+* @param gpio GPIO device to init
+* @param base_add Physical base IO address of peripheral
+* @param end_add Physical final IO address of peripheral
+* @param num_of_channels Number of channels (1,2). 
+* @param flags Flags for I/O and IRQs 
+* @param irqno IRQ number. In PPC this is a virtual IRQ number. 
+* @param fisr Pointer to ISR
+* @param irq_prio Priority for the IRQ
+* @return 0 on success. Otherwise error. 
+*
+* Maps IO region, set channels, flags for IO and set a isr in case IRQs are active. 
+*
+* @note Currently only 1 channel is supported
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
-
-//so far only for 1channel gpios
 int gpio_init(GPIO* gpio, 
 	      long unsigned int base_add, 
 	      long unsigned int end_add, 
@@ -280,6 +386,19 @@ int gpio_init(GPIO* gpio,
     return 0; 
 //TODO: Error clean through tag cleaning
 }
+
+/**
+* @brief Cleaning of GPIO data structure. 
+*
+* @param gpio GPIO device to clean
+* @return 0 on success. Otherwise error. 
+*
+* Unmaps IO region and deactivates IRQs.
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int gpio_clean(GPIO* gpio)
 {

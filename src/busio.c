@@ -1,9 +1,17 @@
 /**
-    Project: Robotics library for the Autonomous Robotics Development Platform  
-    Code: busio.c Low-level Direct-IO allocations
-    Mods:Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
-	 Based on code by Stephane Fillod (C) 2003
+    @file busio.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Low-level Direct-IO allocations    
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+    @author Based on code by Stephane Fillod (C) 2003
  
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -17,8 +25,10 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @version 0.4-Xenomai
 
- **/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +54,13 @@ extern inline void out_8(volatile unsigned char *addr, unsigned val)
 }
 #endif
 
-
+/**
+* @brief Remaps a physical address into the virtual memory
+*
+* @param physaddr Physical base address of the peripheral mappable from the system bus
+* @param size Addresable memory size
+* @return Pointer to the virtual memory address
+*/
 volatile void* ioremap(unsigned long physaddr, unsigned size)
 {
     static int axs_mem_fd = -1;
@@ -91,6 +107,14 @@ volatile void* ioremap(unsigned long physaddr, unsigned size)
     return (volatile void *)reg;
 }
 
+/**
+* @brief Unmaps the virtual address 
+*
+* @param start Virtual base address of the peripheral
+* @param length Allocated memory size
+* @return 0 on success. Otherwise error from munmap()
+*/
+
 int iounmap(volatile void *start, size_t length)
 {
     unsigned long ofs_addr;
@@ -99,6 +123,18 @@ int iounmap(volatile void *start, size_t length)
     /* do some cleanup when you're done with it */
     return munmap((void*)start-ofs_addr, length+ofs_addr);
 }
+
+/**
+* @brief Wrapper function for ioremap() with error checking
+*
+* @see ioremap()
+* @param basep Virtual base address of the peripheral
+* @param baseadd Physical base address of the peripheral
+* @param endadd Physical base address of the peripheral
+* @return 0 on success. 
+* @return -EADDRNOTAVAIL if address fails to be mapped
+* @return -EINVAL if address sanity check fails
+*/
 
 int mapio_region(volatile int** basep, long unsigned int baseadd, long unsigned int endadd)
 {
@@ -118,6 +154,17 @@ int mapio_region(volatile int** basep, long unsigned int baseadd, long unsigned 
 
     return 0;
 }
+
+/**
+* @brief Wrapper function for iounmap() with error checking
+*
+* @see iounmap()
+* @param basep Virtual base address of the peripheral
+* @param baseadd Physical base address of the peripheral
+* @param endadd Physical base address of the peripheral
+* @return 0 on success. 
+* @return -ENXIO if virtual address cannot be unmapped
+*/
 
 int unmapio_region(volatile int** basep, long unsigned int baseadd, long unsigned int endadd)
 {

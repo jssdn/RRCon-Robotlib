@@ -1,10 +1,16 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-    Code: gp2x.c Conversion tables for IR analog rangers GP2x 
-
-    License: Licensed under GPL2.0 
+/**
+    @file gp2x.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Conversion tables for IR analog rangers GP2x 
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+ 
+    @section LICENSE 
+    
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
@@ -18,9 +24,11 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-    NOTE: Obsolete!
-*  ******************************************************************************* **/
+    
+    @version 0.4-Xenomai
+    @deprecated The should serve as an example as this is deprecated and hasn't been tested lately.     
+    
+*/
 
 #include <stdint.h>
 #include <unistd.h>

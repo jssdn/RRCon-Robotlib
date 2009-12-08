@@ -1,11 +1,15 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:_Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-    Code: lis3lv02dl.c Driver for I2C Accelerometer lis3lv02dl.c
-    Notes:  See application note AN2381 ST 
-
-    License: Licensed under GPL2.0 
+/**
+    @file lis3lv02dl.c
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief Driver for I2C LIS3LV02DL Accelerometer
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+ 
+    @section LICENSE 
     
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -20,9 +24,12 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @note See application note AN2381 ST 
 
-*  ******************************************************************************* **/
-
+    @version 0.4-Xenomai       
+    
+ */
 
 #include <stdint.h>
 #include <unistd.h>
@@ -39,6 +46,19 @@
 #include "i2ctools.h"
 #include "busio.h"
 #include "util.h"
+
+/**
+* @brief Initialization for the LIS3LV02DL device
+*
+* @param acc LIS3LV02DL accelerometer to init
+* @param i2c I2C buss where the LIS3LV02DL is attached
+* @param address I2C address
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int lis3lv02dl_init(LIS3LV02DL* acc, I2CDEV* i2c, uint8_t address)
 {
@@ -59,6 +79,17 @@ int lis3lv02dl_init(LIS3LV02DL* acc, I2CDEV* i2c, uint8_t address)
     return 0; 
 }
 
+/**
+* @brief Clean for the LIS3LV02DL device
+*
+* @param acc LIS3LV02DL accelerometer to clean
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int lis3lv02dl_clean(LIS3LV02DL* acc)
 {
     int err; 
@@ -75,6 +106,17 @@ int lis3lv02dl_clean(LIS3LV02DL* acc)
     return err; 
 }
 
+/**
+* @brief ID check for the LIS3LV02DL
+*
+* @param acc LIS3LV02DL accelerometer
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int lis3lv02dl_id_check(LIS3LV02DL* acc)
 {
     int err,res; 
@@ -89,6 +131,17 @@ int lis3lv02dl_id_check(LIS3LV02DL* acc)
 }
 
 
+/**
+* @brief Turns the LIS3LV02DL off for power saving
+*
+* @param acc LIS3LV02DL accelerometer
+* @return 0 on success. Otherwise error. 
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int lis3lv02dl_poweroff(LIS3LV02DL* acc)
 {
     int err; 
@@ -101,6 +154,19 @@ int lis3lv02dl_poweroff(LIS3LV02DL* acc)
     
     return err; 
 }
+
+/**
+* @brief Samples the instantaneous acceleration data from the LIS3LV02DL 
+*
+* @param acc LIS3LV02DL accelerometer
+* @return 0 on success. Otherwise error. 
+*
+* Data is stored into the LIS3LV02DL data structure
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 int lis3lv02dl_read(LIS3LV02DL* acc)
 {
@@ -145,10 +211,24 @@ int lis3lv02dl_read(LIS3LV02DL* acc)
     return 0;
 }
 
+/**
+* @brief Samples the instantaneous acceleration data and set the calibration parameters for the LIS3LV02DL 
+*
+* @param acc LIS3LV02DL accelerometer
+* @return 0 on success. Otherwise error. 
+*
+* Data is stored into the LIS3LV02DL data structure
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int lis3lv02dl_calib(LIS3LV02DL* acc)
 {
     int err; 
 
+    //TODO: THIS SHOULD AVERAGE A BIT MORE
     if(( err = lis3lv02dl_read(acc) ) < 0 )
         return err; 
     
@@ -158,6 +238,19 @@ int lis3lv02dl_calib(LIS3LV02DL* acc)
 
     return 0;
 }
+
+/**
+* @brief Initialized the LIS3LV02DL in 3-axis mode
+*
+* @param acc LIS3LV02DL accelerometer
+* @return 0 on success. Otherwise error. 
+*
+* Initialized the LIS3LV02DL in 3-axis mode, 40hz
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 int lis3lv02dl_init_3axis(LIS3LV02DL* acc)
 {

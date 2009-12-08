@@ -1,17 +1,18 @@
-/** *******************************************************************************
-
-    Project: Robotics library for the Autonomous Robotics Development Platform 
-    Author:  Jorge Sánchez de Nova jssdn (mail)_(at) kth.se 
-             Based in code from i2ctools-3.0.1 by Jean Delvare <khali@linux-fr.org>
-                                                  Frodo Looijaard <frodol@dds.nl>
-                                                  Mark D. Studebaker <mdsxyz123@yahoo.com>
-
-    Code: i2ctools.c I2C Send/Receive functions
-
-    License: Licensed under GPL2.0 
-
-    NOTE: This code assumes capabilities of byte/word reading and are not checked.
-	  Tested with Xilinx IIC Core and Bitbanged i2c gpio core.
+/**
+    @file i2ctools.c 
+    
+    @section DESCRIPTION    
+    
+    Robotics library for the Autonomous Robotics Development Platform  
+    
+    @brief I2C Send/Receive functions
+    
+    @author Jorge Sánchez de Nova jssdn (mail)_(at) kth.se
+    @author Original i2ctools-3.0.1 - Jean Delvare <khali@linux-fr.org>
+    @author Original i2ctools-3.0.1 - Frodo Looijaard <frodol@dds.nl>
+    @author Original i2ctools-3.0.1 - Mark D. Studebaker <mdsxyz123@yahoo.com>
+    
+    @section LICENSE 
     
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,8 +27,12 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+    
+    @version 0.4-Xenomai
 
-*  ******************************************************************************* **/
+    @note This code assumes capabilities of byte/word reading and are not checked.
+	  Tested with Xilinx IIC Core and Bitbanged i2c gpio core.
+ */
 
 #include <stdint.h>
 #include <unistd.h>
@@ -48,6 +53,20 @@
 #include "i2ctools.h"
 #include "util.h" 
 #include "dev_mmaps_parms.h"
+
+/**
+* @brief Initialization for the I2C device
+*
+* @param i2c I2C peripheral to init
+* @param bus Bus number to assign ( i2c-0, i2c-1, ... )
+* @return 0 on success. Otherwise error. 
+*
+* Initizializes the structure and creates corresponding mutex 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
 
 int i2c_init(I2CDEV* i2c, uint8_t bus)
 {
@@ -74,6 +93,19 @@ int i2c_init(I2CDEV* i2c, uint8_t bus)
     return 0; 
 }
 
+/**
+* @brief I2C device clean
+*
+* @param i2c I2C peripheral to clean
+* @return 0 on success. Otherwise error. 
+*
+* Cleans the structure and deletes the corresponding mutex 
+*
+* @note This function is \b NOT thread-safe. The user should guarantee somewhere else that is not called in several instances
+*       for the same resource. 
+*
+*/
+
 int i2c_clean(I2CDEV* i2c)
 {
     int err;
@@ -88,7 +120,22 @@ int i2c_clean(I2CDEV* i2c)
     return 0;
 }
 
-/* SMBus I2C functions for read/write */
+/**
+* @brief Read from IO device I2C device
+*
+* @param i2c I2C peripheral
+* @param address Address of the slave ( 3 - 0x77 ) 
+* @param daddress Address of the internal memory register
+* @param csize Size of data to read ( 'w' = word ; 'b' = byte ) 
+* @return Read value. Negative values (int) should be considered as errors
+* @note; Return value should be masked according to csize
+*
+* SMBus I2C functions for read/write
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking and might take significant time to complete
+*
+*/
 
 int i2c_get( I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize)
 {
@@ -132,6 +179,23 @@ int i2c_get( I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize)
     return res;
 }
 
+/**
+* @brief Write to I2C device
+*
+* @param i2c I2C peripheral
+* @param address Address of the slave ( 3 - 0x77 ) 
+* @param daddress Address of the internal memory register
+* @param csize Size of data to read ( 'w' = word ; 'b' = byte ) 
+* @param value Value to write into the register
+* @return read value. Negative values (int) should be considered as errors.  
+*
+* SMBus I2C functions for read/write
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int i2c_set(I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize, unsigned value)
 {
     int res,err;
@@ -164,7 +228,22 @@ int i2c_set(I2CDEV* i2c, uint8_t address, uint8_t daddress, char csize, unsigned
     return 0; 
 }
 
-/* Special I2C functions for read/write with 3 parameters(see HMC6352) */
+/**
+* @brief Read from I2C device ( Special 3 command version ) 
+*
+* @param i2c I2C peripheral
+* @param address Address of the slave ( 3 - 0x77 ) 
+* @param arg1 First parameter
+* @param arg2 Second parameter
+* @return read value. Negative values (int) should be considered as errors.  
+*
+* Special I2C functions for read/write with 3 parameters(see HMC6352)
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
+
 int i2c_get_3com( I2CDEV* i2c, uint8_t address, uint8_t arg1, uint8_t arg2)
 {
     int err,res;	        
@@ -180,6 +259,21 @@ int i2c_get_3com( I2CDEV* i2c, uint8_t address, uint8_t arg1, uint8_t arg2)
     
     return 0;
 }
+
+/**
+* @brief Write to I2C device ( Special 1 command version ) 
+*
+* @param i2c I2C peripheral
+* @param address Address of the slave ( 3 - 0x77 ) 
+* @param arg1 Command
+* @return read value. Negative values (int) should be considered as errors.  
+*
+* Special I2C functions for write with 1 parameters(see HMC6352)
+*
+* @note This function is \b thread-safe.
+* @note This function is \b blocking. 
+*
+*/
 
 int i2c_set_1com( I2CDEV* i2c, uint8_t address, uint8_t arg1)
 {
